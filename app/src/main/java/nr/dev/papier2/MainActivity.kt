@@ -90,7 +90,7 @@ fun LoginScreen(modifier: Modifier) {
                         .padding(horizontal = 8.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.MailOutline, contentDescription = "Email")
+                    Icon(Icons.Default.MailOutline, contentDescription = "Email", tint = Color.LightGray)
                     Box(Modifier
                         .weight(1f)
                         .padding(start = 8.dp)) {
@@ -117,7 +117,7 @@ fun LoginScreen(modifier: Modifier) {
                             .padding(horizontal = 8.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.Lock, contentDescription = "Lock")
+                        Icon(Icons.Default.Lock, contentDescription = "Lock", tint = Color.LightGray)
                         Box(Modifier
                             .weight(1f)
                             .padding(start = 8.dp)) {
@@ -130,7 +130,7 @@ fun LoginScreen(modifier: Modifier) {
                             } else {
                                 R.drawable.visibility_off
                             }
-                        ), contentDescription = "Toggle",
+                        ), contentDescription = "Toggle", tint = Color.LightGray,
                             modifier = Modifier
                                 .clickable(true, onClick = { showPassword = !showPassword })
                         )
