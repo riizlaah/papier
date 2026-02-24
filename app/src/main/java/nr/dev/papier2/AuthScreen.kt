@@ -169,6 +169,7 @@ fun LoginScreen(modifier: Modifier, controller: NavHostController) {
                         }
                         else -> errorMsg = stat
                     }
+                    loading = false
                 }
             },
             modifier = Modifier
@@ -282,6 +283,10 @@ fun SignUpScreen(modifier: Modifier, controller: NavHostController) {
                 }
                 if(passwordState.text.isBlank()) {
                     errorMsg = "Password can't be empty"
+                    return@TextButton
+                }
+                if(passwordState.text.length < 6) {
+                    errorMsg = "Password must be longer than 6 characters"
                     return@TextButton
                 }
                 scope.launch {

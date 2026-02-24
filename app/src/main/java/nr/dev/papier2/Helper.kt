@@ -48,6 +48,9 @@ object HttpClient {
 
             req.headers.forEach { (key, value) -> conn.setRequestProperty(key, value) }
             if(req.body != null && req.method in listOf("POST", "PUT", "PATCH")) {
+                if(conn.getRequestProperty("content-type") == null) {
+                    conn.setRequestProperty("content-type", "application/json")
+                }
                 conn.getOutputStream().buffered().use { it.write(req.body.toByteArray()) }
             }
             conn.connect()
@@ -78,7 +81,7 @@ object HttpClient {
             send(HttpRequest(
                 url = address + "auth/register",
                 body = body,
-                method = "POST"
+                method = "POST",
             ))
         }
         return res
@@ -92,9 +95,10 @@ object HttpClient {
                 method = "POST"
             ))
         }
-        if(res.code in 200..299 && res.body.isNullOrEmpty()) {
+        println(res)
+        if(res.code in 200..299 && !res.body.isNullOrEmpty()) {
             val json = JSONObject(res.body)
-            if(json.getString("status") != "success") return json.getString("message")
+            if(!json.getBoolean("success")) return json.getString("message")
             accessToken = json.getJSONObject("data").getString("accessToken")
             return "ok"
         } else {
