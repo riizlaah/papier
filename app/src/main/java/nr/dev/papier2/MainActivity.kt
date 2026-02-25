@@ -41,7 +41,7 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                         composable(route = Route.BASE_HOME) {
-                            BaseHome(mod)
+                            BaseHome(mod.fillMaxSize(), navCtrl)
                         }
                     }
 

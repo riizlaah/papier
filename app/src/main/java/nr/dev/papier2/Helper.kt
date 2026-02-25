@@ -1,5 +1,10 @@
 package nr.dev.papier2
 
+import android.graphics.BitmapFactory
+import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -18,7 +23,19 @@ object Route {
     const val PROFILE = "profile"
     const val PRODUCTS = "products"
     const val PRODUCT_DETAIL = "products/{id}"
+    const val HISTORY = "products"
     const val CART = "cart"
+}
+
+fun idxToRoute(idx: Int): String {
+    return when(idx) {
+        0 -> Route.HOME
+        1 -> Route.PRODUCTS
+        2 -> Route.HISTORY
+        3 -> Route.CART
+        4 -> Route.PROFILE
+        else -> Route.HOME
+    }
 }
 
 data class HttpRequest(
@@ -26,20 +43,50 @@ data class HttpRequest(
     val method: String = "GET",
     val body: String? = null,
     val headers: Map<String, String> = emptyMap(),
-    val timeout: Int = 5000
+    val timeout: Int = 10000
 )
 
 data class HttpResponse(
     val code: Int,
     val body: String?,
+    val bytes: ByteArray? = null,
     val headers: Map<String, List<String>> = emptyMap(),
     val errors: String? = null
+)
+
+data class User(
+    val id: String,
+    val name: String,
+    val email: String
+)
+
+data class Product(
+    val id: String,
+    val name: String,
+    val description: String,
+    val imageUrl: String,
+    val avgRating: Double,
+    val variants: List<Variant> = emptyList(),
+    val categories: List<Category> = emptyList()
+)
+data class Variant(
+    val id: String,
+    val productId: String,
+    val name: String,
+    val price: String,
+    val stock: String
+)
+data class Category(
+    val id: String,
+    val name: String,
+    val description: String,
 )
 
 object HttpClient {
     const val address = "https://eshop.jemaristudio.id/"
     var accessToken = ""
-    suspend fun send(req: HttpRequest): HttpResponse {
+    var user: User? = null
+    fun send(req: HttpRequest, getByte: Boolean = false): HttpResponse {
         val conn = URL(req.url).openConnection() as HttpURLConnection
         return try {
             conn.requestMethod = req.method
@@ -51,21 +98,36 @@ object HttpClient {
                 if(conn.getRequestProperty("content-type") == null) {
                     conn.setRequestProperty("content-type", "application/json")
                 }
+                conn.doOutput = true
                 conn.getOutputStream().buffered().use { it.write(req.body.toByteArray()) }
             }
             conn.connect()
             val code = conn.responseCode
-            val body = if(code in 200..299) {
-                conn.getInputStream().bufferedReader().use { it.readText() }
+            var bytes: ByteArray? = null
+            var body: String? = null
+            // ternyata inputStream nya cuma bisa dibaca sekali.
+            // *saya menghabiskan 1 jam debugging cuma untuk load gambar
+            if(getByte) {
+                bytes = if(code in 200..299) {
+                    conn.getInputStream().buffered().use { it.readBytes() }
+                } else {
+                    conn.errorStream?.buffered()?.use { it.readBytes() }
+                }
             } else {
-                conn.errorStream?.bufferedReader()?.use { it.readText() }
+                body = if(code in 200..299) {
+                    conn.getInputStream().bufferedReader().use { it.readText() }
+                } else {
+                    conn.errorStream?.bufferedReader()?.use { it.readText() }
+                }
             }
             HttpResponse(
                 code = code,
                 body = body,
+                bytes = bytes,
                 headers = conn.headerFields
             )
         } catch(e: Exception) {
+            e.printStackTrace()
             HttpResponse(
                 code = -1,
                 body = null,
@@ -73,6 +135,24 @@ object HttpClient {
             )
         } finally {
             conn.disconnect()
+        }
+    }
+    suspend fun loadPng(url: String): ImageBitmap? {
+        return withContext(Dispatchers.IO) {
+            try {
+                val res = send(HttpRequest(url), true)
+                println(res)
+                if(res.code == 200 && res.bytes != null) {
+                    val bitmap = BitmapFactory.decodeByteArray(res.bytes, 0, res.bytes!!.size)
+                    bitmap.asImageBitmap()
+                } else {
+                    println("img loading errCode: ${res.code}")
+                    null
+                }
+            } catch (e: Exception) {
+                println("img loading err msg: ${e.message}")
+                null
+            }
         }
     }
     suspend fun register(name: String, email: String, password: String): HttpResponse {
@@ -95,14 +175,53 @@ object HttpClient {
                 method = "POST"
             ))
         }
-        println(res)
-        if(res.code in 200..299 && !res.body.isNullOrEmpty()) {
-            val json = JSONObject(res.body)
+        if(res.body.isNullOrEmpty()) return "not ok"
+        val json = JSONObject(res.body)
+        if(res.code in 200..299) {
             if(!json.getBoolean("success")) return json.getString("message")
             accessToken = json.getJSONObject("data").getString("accessToken")
+            val userd = json.getJSONObject("data").getJSONObject("user")
+            user = User(
+                userd.getString("id"),
+                userd.getString("name"),
+                userd.getString("email")
+            )
             return "ok"
         } else {
-            return "not ok"
+            println(res)
+            return json.getString("message") ?: "not ok"
         }
+    }
+    suspend fun getTopProducts(): List<Product> {
+        if(accessToken.isEmpty()) return emptyList()
+        val url = address + "products?page=1&limit=10&sort=created_at&order=DESC"
+        val res = withContext(Dispatchers.IO) {
+            send(HttpRequest(
+                url = url,
+                headers = mapOf("authorization" to "Bearer $accessToken")
+            ))
+        }
+        if(res.body.isNullOrEmpty()) return emptyList()
+        val products = mutableListOf<Product>()
+        if(res.code == 200) {
+            val json = JSONObject(res.body)
+            val arr = json.getJSONArray("data")
+            for(i in 0 until arr.length()) {
+                val prod = arr.getJSONObject(i)
+                products.add(
+                    Product(
+                        id = prod.getString("id"),
+                        name = prod.getString("name"),
+                        description = prod.getString("description"),
+                        imageUrl = prod.getString("imageUrl").replace("?", "/png?"),
+                        avgRating = prod.getDouble("avgRating"),
+                    )
+                )
+            }
+            println(products)
+            return products
+        }
+        println("errCode: ${res.code}\nmsg: ${res.errors}")
+        return emptyList()
     }
 }
