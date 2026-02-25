@@ -74,7 +74,7 @@ data class Variant(
     val productId: String,
     val name: String,
     val price: String,
-    val stock: String
+    val stock: Int
 )
 data class Category(
     val id: String,
@@ -206,6 +206,31 @@ object HttpClient {
             val arr = json.getJSONArray("data")
             for(i in 0 until arr.length()) {
                 val prod = arr.getJSONObject(i)
+                val variants = prod.getJSONArray("variants")
+                val variants2 = mutableListOf<Variant>()
+                val categories = prod.getJSONArray("categories")
+                val categories2 = mutableListOf<Category>()
+
+                for(i in 0 until categories.length()) {
+                    val obj = categories.getJSONObject(i)
+                    categories2.add(Category(
+                        id = obj.getString("id"),
+                        name = obj.getString("name"),
+                        description = obj.getString("description"),
+                    ))
+                }
+                for(i in 0 until variants.length()) {
+                    val obj = variants.getJSONObject(i)
+                    variants2.add(Variant(
+                        id = obj.getString("id"),
+                        productId = obj.getString("productId"),
+                        name = obj.getString("name"),
+                        price = obj.getString("price"),
+                        stock = obj.getInt("stock"),
+                    ))
+                }
+
+
                 products.add(
                     Product(
                         id = prod.getString("id"),
@@ -213,6 +238,8 @@ object HttpClient {
                         description = prod.getString("description"),
                         imageUrl = prod.getString("imageUrl").replace("?", "/png?"),
                         avgRating = prod.getDouble("avgRating"),
+                        categories = categories2,
+                        variants = variants2
                     )
                 )
             }
@@ -220,5 +247,33 @@ object HttpClient {
         }
         println("errCode: ${res.code}\nmsg: ${res.errors}")
         return emptyList()
+    }
+
+    suspend fun getCategories(): List<Category> {
+        if(accessToken.isEmpty()) return emptyList()
+        val url = address + "categories"
+        val res = withContext(Dispatchers.IO) {
+            send(HttpRequest(
+                url = url,
+                headers = mapOf("authorization" to "Bearer $accessToken")
+            ))
+        }
+        if(res.body.isNullOrEmpty()) return emptyList()
+        return if(res.code == 200) {
+            val json = JSONObject(res.body)
+            val categories = mutableListOf<Category>()
+            val arr = json.getJSONArray("data")
+            for(i in 0 until arr.length()) {
+                val category = arr.getJSONObject(i)
+                categories.add(Category(
+                    id = category.getString("id"),
+                    name = category.getString("name"),
+                    description = category.getString("description"),
+                ))
+            }
+            return categories
+        } else {
+            emptyList()
+        }
     }
 }
