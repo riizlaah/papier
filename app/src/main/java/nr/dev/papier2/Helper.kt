@@ -141,7 +141,6 @@ object HttpClient {
         return withContext(Dispatchers.IO) {
             try {
                 val res = send(HttpRequest(url), true)
-                println(res)
                 if(res.code == 200 && res.bytes != null) {
                     val bitmap = BitmapFactory.decodeByteArray(res.bytes, 0, res.bytes!!.size)
                     bitmap.asImageBitmap()
@@ -188,7 +187,6 @@ object HttpClient {
             )
             return "ok"
         } else {
-            println(res)
             return json.getString("message") ?: "not ok"
         }
     }
@@ -218,7 +216,6 @@ object HttpClient {
                     )
                 )
             }
-            println(products)
             return products
         }
         println("errCode: ${res.code}\nmsg: ${res.errors}")

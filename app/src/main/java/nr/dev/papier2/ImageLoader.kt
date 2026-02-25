@@ -17,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -32,6 +33,9 @@ class ImageLoader {
         if(imgBitmap != null) cache[url] = imgBitmap
         return imgBitmap
     }
+    fun hasCache(url: String): Boolean {
+        return cache.containsKey(url)
+    }
     fun clearCache() {
         cache.clear()
     }
@@ -41,7 +45,8 @@ class ImageLoader {
 fun NetworkImage(
     url: String,
     modifier: Modifier = Modifier,
-    contentDescription: String? = null
+    contentDescription: String? = null,
+    contentScale: ContentScale = ContentScale.FillHeight
 ) {
     var imgBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
     var isLoading by remember { mutableStateOf(false) }
@@ -52,7 +57,7 @@ fun NetworkImage(
 
     LaunchedEffect(url) {
         if(url.isNotBlank()) {
-            isLoading = true
+            if(!imgLoader.hasCache(url)) isLoading = true
             isError = false
             try {
                 imgBitmap = imgLoader.loadImage(url)
@@ -77,7 +82,8 @@ fun NetworkImage(
                 Image(
                     imgBitmap!!,
                     contentDescription = contentDescription,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = contentScale
                 )
             }
         }
