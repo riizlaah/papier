@@ -34,6 +34,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -55,8 +56,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -93,10 +96,12 @@ fun BaseHome(modifier: Modifier, controller: NavHostController) {
                 ProfileScreen(controller)
             }
         }
-        if(selectedIdx <= 1) {
+        if (selectedIdx <= 1) {
             PrimaryTabRow(
                 selectedTabIndex = selectedIdx,
-                modifier = Modifier.fillMaxWidth().align(Alignment.BottomEnd),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.BottomEnd),
             ) {
                 icons.forEachIndexed { idx, id ->
                     Tab(
@@ -116,7 +121,6 @@ fun BaseHome(modifier: Modifier, controller: NavHostController) {
 }
 
 
-
 @Composable
 fun HomeScreen(controller: NavHostController) {
     val imgLoader = rememberImageLoader()
@@ -127,11 +131,11 @@ fun HomeScreen(controller: NavHostController) {
     var selectedCategory by remember { mutableStateOf("") }
 
     val pageCount = Int.MAX_VALUE
-    val pagerState = rememberPagerState(initialPage = pageCount / 2) { pageCount}
+    val pagerState = rememberPagerState(initialPage = pageCount / 2) { pageCount }
 
     LaunchedEffect(Unit) {
-        if(products.isEmpty()) {
-            products = HttpClient.getTopProducts()
+        if (products.isEmpty()) {
+            products = HttpClient.getProducts()
             promoted = products.slice(0..2)
             categories = HttpClient.getCategories()
             selectedCategory = categories[0].id
@@ -156,54 +160,91 @@ fun HomeScreen(controller: NavHostController) {
                 .zIndex(1f),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Icon(painterResource(R.drawable.bars), tint = MaterialTheme.colorScheme.primary, contentDescription = "Menu")
-            Text("Papier", color = MaterialTheme.colorScheme.primary, fontSize = MaterialTheme.typography.displaySmall.fontSize)
+            Icon(
+                painterResource(R.drawable.bars),
+                tint = MaterialTheme.colorScheme.primary,
+                contentDescription = "Menu"
+            )
+            Text(
+                "Papier",
+                color = MaterialTheme.colorScheme.primary,
+                fontSize = MaterialTheme.typography.displaySmall.fontSize
+            )
             Row {
                 Icon(
                     painterResource(R.drawable.search),
                     tint = MaterialTheme.colorScheme.primary,
                     contentDescription = "Search",
-                    modifier = Modifier.clickable(true, onClick = {controller.navigate(Route.PRODUCTS)})
+                    modifier = Modifier.clickable(
+                        true,
+                        onClick = { controller.navigate(Route.PRODUCTS) })
                 )
                 Spacer(Modifier.width(8.dp))
                 Icon(
                     painterResource(R.drawable.cart),
                     tint = MaterialTheme.colorScheme.primary,
                     contentDescription = "Cart",
-                    modifier = Modifier.clickable(true, onClick = {controller.navigate(Route.PRODUCTS)})
+                    modifier = Modifier.clickable(
+                        true,
+                        onClick = { controller.navigate(Route.PRODUCTS) })
                 )
             }
         }
 
         // main content
-        LazyVerticalGrid(columns = GridCells.Fixed(2), modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            item(span = {GridItemSpan(2) }) {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 32.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            item(span = { GridItemSpan(2) }) {
                 Column {
                     Spacer(Modifier.height(100.dp))
-                    Text("New Arrivals", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = MaterialTheme.typography.displayMedium.fontSize)
+                    Text(
+                        "New Arrivals",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = MaterialTheme.typography.displayMedium.fontSize
+                    )
                     HorizontalPager(
                         state = pagerState,
                         modifier = Modifier
                             .padding(vertical = 16.dp)
                             .fillMaxWidth()
                     ) { page ->
-                        if(promoted.isEmpty()) return@HorizontalPager
+                        if (promoted.isEmpty()) return@HorizontalPager
                         val product = promoted[page % 3]
-                        Box(Modifier.requiredHeight(400.dp).clip(RoundedCornerShape(16.dp))) {
+                        Box(
+                            Modifier
+                                .requiredHeight(400.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                        ) {
                             NetworkImage(
                                 product.imageUrl,
                                 contentDescription = product.name,
                             )
                             Column(
-                                Modifier.align(Alignment.BottomEnd)
-                                    .background(Brush.verticalGradient(listOf(Color.Transparent, Color(0,0,0,100))))
+                                Modifier
+                                    .align(Alignment.BottomEnd)
+                                    .background(
+                                        Brush.verticalGradient(
+                                            listOf(
+                                                Color.Transparent,
+                                                Color(0, 0, 0, 100)
+                                            )
+                                        )
+                                    )
                                     .padding(12.dp),
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Box(modifier = Modifier
-                                    .clip(RoundedCornerShape(50))
-                                    .background(Color.Gray)
-                                    .padding(8.dp)
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(50))
+                                        .background(Color.Gray)
+                                        .padding(8.dp)
                                 ) {
                                     Text(
                                         "PROMOTED",
@@ -228,28 +269,42 @@ fun HomeScreen(controller: NavHostController) {
                     }
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         items(categories) { item ->
-                            if(selectedCategory == item.id) {
+                            if (selectedCategory == item.id) {
                                 Button(
                                     onClick = {},
-                                    contentPadding = PaddingValues(vertical = 6.dp, horizontal = 16.dp)
+                                    contentPadding = PaddingValues(
+                                        vertical = 6.dp,
+                                        horizontal = 16.dp
+                                    )
                                 ) {
                                     Text(item.name)
                                 }
                             } else {
                                 OutlinedButton(
-                                    onClick = {selectedCategory = item.id},
+                                    onClick = { selectedCategory = item.id },
                                     border = BorderStroke(1.dp, Color.LightGray),
-                                    contentPadding = PaddingValues(vertical = 6.dp, horizontal = 16.dp)
+                                    contentPadding = PaddingValues(
+                                        vertical = 6.dp,
+                                        horizontal = 16.dp
+                                    )
                                 ) {
                                     Text(item.name, color = Color.Gray)
                                 }
                             }
                         }
                     }
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text("Popular", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Popular",
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Medium
+                        )
                         TextButton(
-                            onClick = {controller.navigate(Route.PRODUCTS + "?category=$selectedCategory")}
+                            onClick = { controller.navigate(Route.PRODUCTS + "?category=$selectedCategory") }
                         ) {
                             Text(text = "SEE ALL", letterSpacing = 2.sp)
                         }
@@ -258,16 +313,42 @@ fun HomeScreen(controller: NavHostController) {
             }
             items(filteredProducts) { product ->
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NetworkImage(product.imageUrl, contentDescription = product.name, modifier = Modifier.fillMaxWidth().height(200.dp), contentScale = ContentScale.FillWidth)
-                    Text(product.name, softWrap = false, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.Medium)
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    NetworkImage(
+                        product.imageUrl,
+                        contentDescription = product.name,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        contentScale = ContentScale.FillWidth
+                    )
+                    Text(
+                        product.name,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Text("Rp${product.variants[0].price}", color = Color.Gray)
                         IconButton(
                             onClick = {},
-                            modifier = Modifier.clip(CircleShape).padding(4.dp),
-                            colors = IconButtonDefaults.filledIconButtonColors(containerColor = Color(0xffffedd4))
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .padding(4.dp),
+                            colors = IconButtonDefaults.filledIconButtonColors(
+                                containerColor = Color(
+                                    0xffffedd4
+                                )
+                            )
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = "Add", tint = Color(0xff7e2a0c))
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = "Add",
+                                tint = Color(0xff7e2a0c)
+                            )
                         }
                     }
                 }
@@ -280,11 +361,125 @@ fun HomeScreen(controller: NavHostController) {
 }
 
 @Composable
+fun ProductsScreen(search: String = "", categoryId: String = "0", controller: NavHostController) {
+    var search by remember { mutableStateOf("") }
+    var categories by remember { mutableStateOf(emptyList<Category>()) }
+    var products by remember { mutableStateOf(emptyList<Product>()) }
+    var selectedCategory by remember { mutableStateOf(categoryId) }
+
+    LaunchedEffect(Unit) {
+        if(categories.isEmpty()) {
+            products = HttpClient.getProducts(search, categoryId)
+            categories = listOf(Category("0", "Semua Item", "Semua Item")) + HttpClient.getCategories()
+            selectedCategory = categoryId
+        }
+    }
+
+    LaunchedEffect(selectedCategory) {
+        if(selectedCategory == "0") {
+
+        } else {
+
+        }
+    }
+
+    Box(
+        Modifier.fillMaxSize()
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .background(Color(253, 251, 247, 225))
+                .padding(16.dp)
+                .offset(0.dp, 0.dp)
+                .zIndex(1f),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(
+                    painterResource(R.drawable.arr_back),
+                    tint = Color.Gray,
+                    modifier = Modifier.clickable(true, onClick = { controller.popBackStack() }),
+                    contentDescription = "Back"
+                )
+                IconTextField(
+                    value =search,
+                    onValueChange = {search = it},
+                    icon = ImageVector.vectorResource(R.drawable.search)
+                )
+                Box(
+                    Modifier.clickable(onClick = {})
+                ) {
+                    Icon(painterResource(R.drawable.cart), tint = MaterialTheme.colorScheme.primary, contentDescription = "Cart")
+                }
+            }
+            LazyRow(Modifier.fillMaxWidth()) {
+                items(categories) { item ->
+                    if (selectedCategory == item.id) {
+                        Button(
+                            onClick = {},
+                            contentPadding = PaddingValues(
+                                vertical = 6.dp,
+                                horizontal = 16.dp
+                            )
+                        ) {
+                            Text(item.name)
+                        }
+                    } else {
+                        OutlinedButton(
+                            onClick = { selectedCategory = item.id },
+                            border = BorderStroke(1.dp, Color.LightGray),
+                            contentPadding = PaddingValues(
+                                vertical = 6.dp,
+                                horizontal = 16.dp
+                            )
+                        ) {
+                            Text(item.name, color = Color.Gray)
+                        }
+                    }
+                }
+            }
+        }
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            modifier = Modifier.fillMaxSize().padding(32.dp)
+        ) {
+            item(span = {GridItemSpan(2)}) {
+                Column(Modifier.fillMaxWidth()) {
+                    Spacer(Modifier.height(100.dp))
+                    HorizontalDivider()
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text("Discover", color = MaterialTheme.colorScheme.primary, fontSize = MaterialTheme.typography.headlineMedium.fontSize)
+                        Text("$ item found", color = Color.Gray, fontSize = MaterialTheme.typography.headlineSmall.fontSize)
+                    }
+                    Spacer(Modifier.height(12.dp))
+                }
+            }
+            items(products) { item ->
+
+            }
+
+        }
+    }
+}
+
+@Composable
 fun ProfileScreen(controller: NavHostController) {
     val scrollState = rememberScrollState()
-    Column(Modifier.fillMaxSize()) {
-        Row(Modifier.fillMaxWidth().padding(18.dp)) {
-            TextButton(onClick = {controller.popBackStack()}) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .padding(32.dp)
+    ) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(18.dp)
+        ) {
+            TextButton(onClick = { controller.popBackStack() }) {
                 Icon(painterResource(R.drawable.arr_back), contentDescription = "Back")
                 Text("My Profile")
             }
@@ -305,7 +500,11 @@ fun ProfileScreen(controller: NavHostController) {
                 border = BorderStroke(0.5.dp, Color(255, 0, 0, 150)),
                 contentPadding = PaddingValues(vertical = 8.dp)
             ) {
-                Icon(painterResource(R.drawable.logout), tint = Color.Red, contentDescription = "Logout")
+                Icon(
+                    painterResource(R.drawable.logout),
+                    tint = Color.Red,
+                    contentDescription = "Logout"
+                )
                 Text("Log Out")
             }
         }

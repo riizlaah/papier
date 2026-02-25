@@ -1,16 +1,15 @@
 package nr.dev.papier2
 
 import android.graphics.BitmapFactory
-import androidx.compose.material3.ColorScheme
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
-import java.lang.Exception
 import java.net.HttpURLConnection
 import java.net.URL
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 object Route {
     // auth
@@ -190,9 +189,16 @@ object HttpClient {
             return json.getString("message") ?: "not ok"
         }
     }
-    suspend fun getTopProducts(): List<Product> {
+    suspend fun getProducts(search: String = "", categoryId: String = "0"): List<Product> {
         if(accessToken.isEmpty()) return emptyList()
-        val url = address + "products?page=1&limit=10&sort=created_at&order=DESC"
+        var url = address + "products?page=1&limit=10&sort=created_at&order=DESC"
+        if(search != "") {
+            val encoded = URLEncoder.encode(search, StandardCharsets.UTF_8.toString())
+            url += "&search=$encoded"
+        }
+        if(categoryId != "0") {
+            url += "&categoryId=$categoryId"
+        }
         val res = withContext(Dispatchers.IO) {
             send(HttpRequest(
                 url = url,
