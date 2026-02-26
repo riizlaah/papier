@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -34,10 +33,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -59,17 +55,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import androidx.navigation.NamedNavArgument
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -100,7 +92,7 @@ fun BaseHome(modifier: Modifier, controller: NavHostController) {
                 HomeScreen(navHost)
             }
             composable(route = Route.PROFILE) {
-                ProfileScreen(controller)
+                ProfileScreen(controller, navHost)
             }
             composable(
                 route = Route.PRODUCTS_FULL,
@@ -121,6 +113,16 @@ fun BaseHome(modifier: Modifier, controller: NavHostController) {
                     categoryId = backStackEntry.arguments?.getString("categoryId") ?: "0",
                     controller = controller,
                 )
+            }
+            composable(
+                route = Route.PRODUCT_DETAIL_FULL,
+                arguments = listOf(
+                    navArgument("id") {
+                        type = NavType.StringType
+                    }
+                )
+            ) { backStackEntry ->
+                ProductDetailScreen(backStackEntry.arguments?.getString("id") ?: "n", navHost)
             }
         }
         if (selectedIdx <= 1) {
@@ -203,7 +205,8 @@ fun HomeScreen(controller: NavHostController) {
                     contentDescription = "Search",
                     modifier = Modifier.clickable(
                         true,
-                        onClick = { controller.navigate(Route.PRODUCTS) })
+                        onClick = { controller.navigate(Route.PRODUCTS) }
+                    )
                 )
                 Spacer(Modifier.width(8.dp))
                 Icon(
@@ -239,14 +242,15 @@ fun HomeScreen(controller: NavHostController) {
                         state = pagerState,
                         modifier = Modifier
                             .padding(vertical = 16.dp)
+                            .clip(RoundedCornerShape(16.dp))
                             .fillMaxWidth()
                     ) { page ->
                         if (promoted.isEmpty()) return@HorizontalPager
                         val product = promoted[page % 3]
                         Box(
-                            Modifier
+                            modifier = Modifier
                                 .requiredHeight(400.dp)
-                                .clip(RoundedCornerShape(16.dp))
+                                .clickable(onClick = { controller.navigate(Route.PRODUCTS + "/${product.id}") })
                         ) {
                             NetworkImage(
                                 product.imageUrl,
@@ -338,7 +342,11 @@ fun HomeScreen(controller: NavHostController) {
                 }
             }
             items(filteredProducts) { product ->
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier
+                        .clickable(onClick = { controller.navigate(Route.PRODUCTS + "/${product.id}") })
+                ) {
                     NetworkImage(
                         product.imageUrl,
                         contentDescription = product.name,
@@ -387,175 +395,7 @@ fun HomeScreen(controller: NavHostController) {
 }
 
 @Composable
-fun ProductsScreen(searchStr: String = "", categoryId: String = "0", controller: NavHostController) {
-    var search by remember { mutableStateOf(searchStr) }
-    var categories by remember { mutableStateOf(emptyList<Category>()) }
-    var products by remember { mutableStateOf(emptyList<Product>()) }
-    var selectedCategory by remember { mutableStateOf(categoryId) }
-    var loading by remember { mutableStateOf(false) }
-
-    LaunchedEffect(Unit) {
-        if(categories.isEmpty()) {
-            loading = true
-            products = HttpClient.getProducts(search, categoryId)
-            categories = listOf(Category("0", "Semua Item", "Semua Item")) + HttpClient.getCategories()
-            selectedCategory = categoryId
-            loading = false
-        }
-    }
-
-    LaunchedEffect(selectedCategory) {
-        loading = true
-        if(selectedCategory == "0") {
-            products = HttpClient.getProducts(search)
-        } else {
-            products = HttpClient.getProducts(search, selectedCategory)
-        }
-        loading = false
-    }
-    LaunchedEffect(search) {
-        delay(500)
-        loading = true
-        products = HttpClient.getProducts(search, selectedCategory)
-        loading = false
-    }
-
-    Box(
-        Modifier.fillMaxSize()
-    ) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .background(Color(253, 251, 247, 225))
-                .padding(24.dp)
-                .offset(0.dp, 0.dp)
-                .zIndex(1f),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(
-                    painterResource(R.drawable.arr_back),
-                    tint = Color.Gray,
-                    modifier = Modifier.clickable(true, onClick = { controller.navigateUp() }),
-                    contentDescription = "Back"
-                )
-                Spacer(Modifier.width(12.dp))
-                IconTextField(
-                    value = search,
-                    onValueChange = {search = it},
-                    icon = ImageVector.vectorResource(R.drawable.search),
-                    modifier = Modifier.weight(1f)
-                )
-                Spacer(Modifier.width(12.dp))
-                Box(
-                    Modifier.clickable(onClick = {})
-                ) {
-                    Icon(painterResource(R.drawable.cart), tint = MaterialTheme.colorScheme.primary, contentDescription = "Cart")
-                }
-            }
-            LazyRow(Modifier.fillMaxWidth()) {
-                items(categories) { item ->
-                    if (selectedCategory == item.id) {
-                        Button(
-                            onClick = {},
-                            contentPadding = PaddingValues(
-                                vertical = 6.dp,
-                                horizontal = 16.dp
-                            )
-                        ) {
-                            Text(item.name)
-                        }
-                    } else {
-                        OutlinedButton(
-                            onClick = { selectedCategory = item.id },
-                            border = BorderStroke(1.dp, Color.LightGray),
-                            contentPadding = PaddingValues(
-                                vertical = 6.dp,
-                                horizontal = 16.dp
-                            )
-                        ) {
-                            Text(item.name, color = Color.Gray)
-                        }
-                    }
-                }
-            }
-        }
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            modifier = Modifier.fillMaxSize().padding(32.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            item(span = {GridItemSpan(2)}) {
-                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Spacer(Modifier.height(120.dp))
-                    HorizontalDivider()
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text("Discover", color = MaterialTheme.colorScheme.primary, fontSize = MaterialTheme.typography.headlineMedium.fontSize)
-                        Text("${products.size} item found", color = Color.Gray, fontSize = MaterialTheme.typography.headlineSmall.fontSize)
-                    }
-                    Spacer(Modifier.height(12.dp))
-                    if(loading) {
-                        Spacer(Modifier.height(18.dp))
-                        CircularProgressIndicator(Modifier.size(32.dp))
-                    }
-                }
-            }
-            items(products) { product ->
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NetworkImage(
-                        product.imageUrl,
-                        contentDescription = product.name,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(16.dp))
-                            .fillMaxWidth()
-                            .height(200.dp),
-                        contentScale = ContentScale.FillWidth
-                    )
-                    Text(
-                        product.name,
-                        softWrap = false,
-                        overflow = TextOverflow.Ellipsis,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Text(
-                        product.categories[0].name,
-                        softWrap = false,
-                        overflow = TextOverflow.Ellipsis,
-                        fontSize = MaterialTheme.typography.bodySmall.fontSize,
-                        color = Color.Gray
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("Rp${product.variants[0].price}", color = MaterialTheme.colorScheme.primary, fontSize = MaterialTheme.typography.bodySmall.fontSize)
-                        TextButton(
-                            onClick = {},
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(50)),
-                            colors = ButtonDefaults.textButtonColors(
-                                containerColor = Color(
-                                    0xffffedd4
-                                )
-                            )
-                        ) {
-                            Text("View", fontSize = MaterialTheme.typography.bodyMedium.fontSize, color = Color(0xff7e2a0c))
-                        }
-                    }
-                }
-            }
-
-        }
-    }
-}
-
-@Composable
-fun ProfileScreen(controller: NavHostController) {
+fun ProfileScreen(rootController: NavHostController, appController: NavHostController) {
     val scrollState = rememberScrollState()
     Column(
         Modifier
@@ -567,8 +407,9 @@ fun ProfileScreen(controller: NavHostController) {
                 .fillMaxWidth()
                 .padding(18.dp)
         ) {
-            TextButton(onClick = { controller.popBackStack() }) {
+            TextButton(onClick = { appController.popBackStack() }) {
                 Icon(painterResource(R.drawable.arr_back), contentDescription = "Back")
+                Spacer(Modifier.width(12.dp))
                 Text("My Profile")
             }
         }
@@ -578,8 +419,8 @@ fun ProfileScreen(controller: NavHostController) {
                 onClick = {
                     HttpClient.user = null
                     HttpClient.accessToken = ""
-                    controller.navigate(Route.BASE_AUTH) {
-                        popUpTo(controller.graph.findStartDestination().id) {
+                    rootController.navigate(Route.BASE_AUTH) {
+                        popUpTo(rootController.graph.id) {
                             inclusive = true
                         }
                     }
