@@ -32,6 +32,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -82,6 +84,9 @@ fun BaseHome(modifier: Modifier, controller: NavHostController) {
         R.drawable.user
     )
     val navHost = rememberNavController()
+    LaunchedEffect(Unit) {
+        HttpClient.getItemInCarts()
+    }
     Box(modifier) {
         NavHost(
             navController = navHost,
@@ -141,6 +146,28 @@ fun BaseHome(modifier: Modifier, controller: NavHostController) {
                         },
                         modifier = Modifier.padding(vertical = 12.dp)
                     ) {
+                        if(idx == 3 && HttpClient.totalItemInCarts > 0) {
+                            BadgedBox(
+                                badge = {
+                                    Badge(
+                                        containerColor = Color(0xfff54a00),
+                                        contentColor = Color.White
+                                    ) {
+                                        Text("${HttpClient.totalItemInCarts}")
+                                    }
+                                }
+                            ) {
+                                Icon(
+                                    painterResource(R.drawable.cart),
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    contentDescription = "Cart",
+                                    modifier = Modifier.clickable(
+                                        true,
+                                        onClick = { controller.navigate(Route.CART) })
+                                )
+                            }
+                            return@Tab
+                        }
                         Icon(painterResource(id), contentDescription = idx.toString())
                     }
                 }
@@ -209,14 +236,36 @@ fun HomeScreen(controller: NavHostController) {
                     )
                 )
                 Spacer(Modifier.width(8.dp))
-                Icon(
-                    painterResource(R.drawable.cart),
-                    tint = MaterialTheme.colorScheme.primary,
-                    contentDescription = "Cart",
-                    modifier = Modifier.clickable(
-                        true,
-                        onClick = { controller.navigate(Route.CART) })
-                )
+                if(HttpClient.totalItemInCarts > 0) {
+                    BadgedBox(
+                        modifier = Modifier.clickable(onClick = {
+                            controller.navigate(Route.CART)
+                        }),
+                        badge = {
+                            Badge(
+                                containerColor = Color(0xfff54a00),
+                                contentColor = Color.White
+                            ) {
+                                Text("${HttpClient.totalItemInCarts}")
+                            }
+                        }
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.cart),
+                            tint = MaterialTheme.colorScheme.primary,
+                            contentDescription = "Cart"
+                        )
+                    }
+                } else {
+                    Icon(
+                        painterResource(R.drawable.cart),
+                        tint = MaterialTheme.colorScheme.primary,
+                        contentDescription = "Cart",
+                        modifier = Modifier.clickable(
+                            true,
+                            onClick = { controller.navigate(Route.CART) })
+                    )
+                }
             }
         }
 

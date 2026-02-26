@@ -1,6 +1,9 @@
 package nr.dev.papier2
 
 import android.graphics.BitmapFactory
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import kotlinx.coroutines.Dispatchers
@@ -95,6 +98,7 @@ object HttpClient {
     const val address = "https://eshop.jemaristudio.id/"
     var accessToken = ""
     var itemInCarts = emptyList<Cart>()
+    var totalItemInCarts by mutableIntStateOf(0)
     var user: User? = null
     fun send(req: HttpRequest, getByte: Boolean = false): HttpResponse {
         val conn = URL(req.url).openConnection() as HttpURLConnection
@@ -434,6 +438,7 @@ object HttpClient {
                 ))
             }
             itemInCarts = items
+            totalItemInCarts = items.sumOf { it.quantity }
             return items
         }
         println("errCode: ${res.code};msg: ${res.errors}")

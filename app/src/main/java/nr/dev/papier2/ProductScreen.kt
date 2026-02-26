@@ -27,6 +27,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -133,13 +135,34 @@ fun ProductsScreen(
                     modifier = Modifier.weight(1f)
                 )
                 Spacer(Modifier.width(12.dp))
-                Box(
-                    Modifier.clickable(onClick = {})
-                ) {
+                if(HttpClient.totalItemInCarts > 0) {
+                    BadgedBox(
+                        modifier = Modifier.clickable(onClick = {
+                            controller.navigate(Route.CART)
+                        }),
+                        badge = {
+                            Badge(
+                                containerColor = Color(0xfff54a00),
+                                contentColor = Color.White
+                            ) {
+                                Text("${HttpClient.totalItemInCarts}")
+                            }
+                        }
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.cart),
+                            tint = MaterialTheme.colorScheme.primary,
+                            contentDescription = "Cart"
+                        )
+                    }
+                } else {
                     Icon(
                         painterResource(R.drawable.cart),
                         tint = MaterialTheme.colorScheme.primary,
-                        contentDescription = "Cart"
+                        contentDescription = "Cart",
+                        modifier = Modifier.clickable(
+                            true,
+                            onClick = { controller.navigate(Route.CART) })
                     )
                 }
             }
@@ -358,8 +381,8 @@ fun ProductDetailScreen(id: String, controller: NavHostController) {
                     modifier = Modifier
                         .clip(
                             RoundedCornerShape(
-                                bottomEnd = 16.dp,
-                                bottomStart = 16.dp
+                                bottomEnd = 24.dp,
+                                bottomStart = 24.dp
                             )
                         )
                         .fillMaxWidth()
@@ -522,6 +545,7 @@ fun ProductDetailScreen(id: String, controller: NavHostController) {
         Row(
             Modifier
                 .align(Alignment.BottomStart)
+                .clip(RoundedCornerShape(topEnd = 24.dp, topStart = 24.dp))
                 .fillMaxWidth()
                 .background(Color.White)
                 .padding(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 64.dp),
@@ -538,13 +562,12 @@ fun ProductDetailScreen(id: String, controller: NavHostController) {
                         loading2 = true
                         HttpClient.addVariantToCart(selectedVariant!!.id, quantity)
                         loading2 = false
+                        HttpClient.getItemInCarts()
                     }
                 },
                 contentPadding = PaddingValues(vertical = 12.dp, horizontal = 24.dp)
             ) {
                 if(loading2) {
-                    CircularProgressIndicator()
-                    Spacer(Modifier.width(8.dp))
                     Text("Wait...", fontWeight = FontWeight.Medium)
                 } else {
                     Icon(
