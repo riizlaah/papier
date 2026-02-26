@@ -84,9 +84,17 @@ data class Category(
     val description: String,
 )
 
+data class Cart(
+    val id: String,
+    val quantity: Int,
+    val variant: Variant,
+    val product: Product
+)
+
 object HttpClient {
     const val address = "https://eshop.jemaristudio.id/"
     var accessToken = ""
+    var itemInCarts = emptyList<Cart>()
     var user: User? = null
     fun send(req: HttpRequest, getByte: Boolean = false): HttpResponse {
         val conn = URL(req.url).openConnection() as HttpURLConnection
@@ -306,11 +314,10 @@ object HttpClient {
 
     suspend fun getProductById(id: String): Product? {
         if (accessToken.isEmpty()) return null
-        var url = address + "products/$id"
         val res = withContext(Dispatchers.IO) {
             send(
                 HttpRequest(
-                    url = url,
+                    url = address + "products/$id",
                     headers = mapOf("authorization" to "Bearer $accessToken")
                 )
             )
@@ -355,7 +362,81 @@ object HttpClient {
                 variants = variants2
             )
         }
-        println("errCode: ${res.code}\nmsg: ${res.errors}")
+        println("errCode: ${res.code};msg: ${res.errors}")
         return null
+    }
+
+    suspend fun addVariantToCart(variantId: String, quantity: Int): Boolean {
+        if(accessToken.isEmpty()) return false
+        if(itemInCarts.any { it.variant.id == variantId }) {
+            val item = itemInCarts.find { it.variant.id == variantId }
+            val body = """{"quantity": ${quantity + item!!.quantity}}"""
+            val res = withContext(Dispatchers.IO) {
+                send(HttpRequest(
+                    url = address + "cart/$variantId",
+                    method = "PATCH",
+                    body = body,
+                    headers = mapOf("authorization" to "Bearer $accessToken")
+                ))
+            }
+            if(res.body.isNullOrEmpty()) return false
+            return res.code == 200
+        } else {
+            val body = """{"variantId": "$variantId", "quantity": $quantity}"""
+            val res = withContext(Dispatchers.IO) {
+                send(HttpRequest(
+                    url = address + "cart",
+                    method = "POST",
+                    body = body,
+                    headers = mapOf("authorization" to "Bearer $accessToken")
+                ))
+            }
+            return res.code == 200
+        }
+    }
+
+    suspend fun getItemInCarts(): List<Cart> {
+        if(accessToken.isEmpty()) return emptyList()
+        val res = withContext(Dispatchers.IO) {
+            send(HttpRequest(
+                url = address + "cart",
+                headers = mapOf("authorization" to "Bearer $accessToken")
+            ))
+        }
+        if(res.body.isNullOrEmpty()) return emptyList()
+        if(res.code == 200) {
+            val json = JSONObject(res.body)
+            val arr = json.getJSONArray("data")
+            val items = mutableListOf<Cart>()
+            for(i in 0 until arr.length()) {
+                val obj = arr.getJSONObject(i)
+                val variantJSON = obj.getJSONObject("variant")
+                val productJSON = variantJSON.getJSONObject("product")
+                val product = Product(
+                    id = productJSON.getString("id"),
+                    name = productJSON.getString("name"),
+                    description = productJSON.getString("description"),
+                    imageUrl = productJSON.getString("imageUrl").replace("?", "/png?"),
+                    avgRating = productJSON.getDouble("avgRating")
+                )
+                val variant = Variant(
+                    id = variantJSON.getString("id"),
+                    productId = variantJSON.getString("productId"),
+                    name = variantJSON.getString("name"),
+                    price = variantJSON.getString("price"),
+                    stock = variantJSON.getInt("stock"),
+                )
+                items.add(Cart(
+                    id = obj.getString("id"),
+                    quantity = obj.getInt("quantity"),
+                    product = product,
+                    variant = variant
+                ))
+            }
+            itemInCarts = items
+            return items
+        }
+        println("errCode: ${res.code};msg: ${res.errors}")
+        return emptyList()
     }
 }

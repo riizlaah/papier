@@ -44,6 +44,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.math.max
 
 @Composable
@@ -273,7 +275,9 @@ fun ProductDetailScreen(id: String, controller: NavHostController) {
     var product by remember { mutableStateOf<Product?>(null) }
     var selectedVariant by remember { mutableStateOf<Variant?>(null) }
     var loading by remember { mutableStateOf(true) }
+    var loading2 by remember { mutableStateOf(false) }
     var quantity by remember { mutableIntStateOf(1) }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         if (product == null) {
@@ -529,14 +533,27 @@ fun ProductDetailScreen(id: String, controller: NavHostController) {
                 Text("Rp${selectedVariant!!.price.toDouble() * quantity}", color = MaterialTheme.colorScheme.primary, fontSize = MaterialTheme.typography.headlineMedium.fontSize)
             }
             Button(
-                onClick = {},
+                onClick = {
+                    scope.launch {
+                        loading2 = true
+                        HttpClient.addVariantToCart(selectedVariant!!.id, quantity)
+                        loading2 = false
+                    }
+                },
                 contentPadding = PaddingValues(vertical = 12.dp, horizontal = 24.dp)
             ) {
-                Icon(
-                    painterResource(R.drawable.cart),
-                    contentDescription = "Cart",
-                )
-                Text("Add to Cart", fontWeight = FontWeight.Medium)
+                if(loading2) {
+                    CircularProgressIndicator()
+                    Spacer(Modifier.width(8.dp))
+                    Text("Wait...", fontWeight = FontWeight.Medium)
+                } else {
+                    Icon(
+                        painterResource(R.drawable.cart),
+                        contentDescription = "Cart",
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text("Add to Cart", fontWeight = FontWeight.Medium)
+                }
             }
         }
     }
