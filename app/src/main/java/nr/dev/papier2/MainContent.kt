@@ -152,14 +152,14 @@ fun BaseHome(modifier: Modifier, controller: NavHostController) {
                         },
                         modifier = Modifier.padding(vertical = 12.dp)
                     ) {
-                        if(idx == 3 && HttpClient.totalItemInCarts > 0) {
+                        if(idx == 3 && HttpClient.itemInCarts.size > 0) {
                             BadgedBox(
                                 badge = {
                                     Badge(
                                         containerColor = Color(0xfff54a00),
                                         contentColor = Color.White
                                     ) {
-                                        Text("${HttpClient.totalItemInCarts}")
+                                        Text("${HttpClient.itemInCarts.size}")
                                     }
                                 }
                             ) {
@@ -240,7 +240,7 @@ fun HomeScreen(controller: NavHostController) {
                     )
                 )
                 Spacer(Modifier.width(8.dp))
-                if(HttpClient.totalItemInCarts > 0) {
+                if(HttpClient.itemInCarts.size > 0) {
                     BadgedBox(
                         modifier = Modifier.clickable(onClick = {
                             controller.navigate(Route.CART)
@@ -250,7 +250,7 @@ fun HomeScreen(controller: NavHostController) {
                                 containerColor = Color(0xfff54a00),
                                 contentColor = Color.White
                             ) {
-                                Text("${HttpClient.totalItemInCarts}")
+                                Text("${HttpClient.itemInCarts.size}")
                             }
                         }
                     ) {

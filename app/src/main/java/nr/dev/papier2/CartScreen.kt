@@ -83,7 +83,7 @@ fun CartScreen(controller: NavHostController) {
                 Text("Your Cart", fontWeight = FontWeight.Medium)
             }
             Text(
-                text = "${HttpClient.totalItemInCarts} Items",
+                text = "${HttpClient.itemInCarts.size} Items",
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
                     .background(Color(0xffffedd4))
@@ -93,10 +93,10 @@ fun CartScreen(controller: NavHostController) {
                 color = MaterialTheme.colorScheme.primary
             )
         }
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.fillMaxSize().padding(32.dp)) {
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.fillMaxSize().padding(24.dp)) {
             item {
                 Spacer(Modifier.height(64.dp))
-                if(HttpClient.totalItemInCarts == 0) {
+                if(HttpClient.itemInCarts.size == 0) {
                     Text("Empty")
                 }
             }
@@ -114,7 +114,7 @@ fun CartScreen(controller: NavHostController) {
                         cart.product.imageUrl,
                         contentDescription = cart.product.name,
                         modifier = Modifier
-                            .size(128.dp)
+                            .size(100.dp)
                             .clip(RoundedCornerShape(12.dp))
                     )
                     Spacer(Modifier.width(8.dp))
@@ -144,30 +144,29 @@ fun CartScreen(controller: NavHostController) {
                                     .padding(12.dp),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
+                                val idx = HttpClient.itemInCarts.indexOfFirst { it.id == cart.id }
                                 Icon(
                                     painterResource(R.drawable.remove),
                                     tint = Color.Gray,
                                     contentDescription = "Decrease",
                                     modifier = Modifier.clickable(onClick = {
-                                        val idx = HttpClient.itemInCarts.indexOfFirst { it.id == cart.id }
                                         HttpClient.itemInCarts[idx].quantity = max(1, HttpClient.itemInCarts[idx].quantity - 1)
                                         scope.launch {
-                                            HttpClient.updateCartItemQuantity(cart.variant.id, HttpClient.itemInCarts[idx].quantity)
+                                            HttpClient.updateCartItemQuantity(cart.id, HttpClient.itemInCarts[idx].quantity)
                                         }
                                     })
                                 )
-                                Text("${cart.quantity}")
+                                Text("${HttpClient.itemInCarts[idx].quantity}")
                                 Icon(
-                                    Icons.Default.Add ,
+                                    Icons.Default.Add,
                                     tint = Color.Gray,
                                     contentDescription = "Increase",
                                     modifier = Modifier
                                         .requiredSize(24.dp)
                                         .clickable(onClick = {
-                                            val idx = HttpClient.itemInCarts.indexOfFirst { it.id == cart.id }
                                             HttpClient.itemInCarts[idx].quantity += 1
                                             scope.launch {
-                                                HttpClient.updateCartItemQuantity(cart.variant.id, HttpClient.itemInCarts[idx].quantity)
+                                                HttpClient.updateCartItemQuantity(cart.id, HttpClient.itemInCarts[idx].quantity)
                                             }
                                         })
                                 )
@@ -203,7 +202,7 @@ fun CartScreen(controller: NavHostController) {
                 }
             }
             item {
-                Column {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Order Summary")
                     val total = HttpClient.itemInCarts.sumOf { it.variant.price.toDouble() * it.quantity }
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -228,7 +227,7 @@ fun CartScreen(controller: NavHostController) {
                                 .padding(12.dp)
                         )
                     }
-                    Spacer(Modifier.height(92.dp))
+                    Spacer(Modifier.height(128.dp))
                 }
             }
         }

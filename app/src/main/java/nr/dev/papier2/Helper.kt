@@ -1,6 +1,7 @@
 package nr.dev.papier2
 
 import android.graphics.BitmapFactory
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -99,7 +100,7 @@ object HttpClient {
     const val address = "https://eshop.jemaristudio.id/"
     var accessToken = ""
     var itemInCarts = mutableStateListOf<Cart>()
-    var totalItemInCarts by mutableIntStateOf(0)
+//    var totalItemInCarts by derivedStateOf { itemInCarts.size }
     var user: User? = null
     fun send(req: HttpRequest, getByte: Boolean = false): HttpResponse {
         val conn = URL(req.url).openConnection() as HttpURLConnection
@@ -440,30 +441,30 @@ object HttpClient {
             }
             itemInCarts.clear()
             itemInCarts.addAll(items)
-            totalItemInCarts = items.sumOf { it.quantity }
+//            totalItemInCarts = items.sumOf { it.quantity }
             return true
         }
         println("errCode: ${res.code};msg: ${res.errors}")
         return false
     }
 
-    suspend fun deleteVariantFromCart(variantId: String) {
+    suspend fun deleteVariantFromCart(id: String) {
         if(accessToken.isEmpty()) return
         withContext(Dispatchers.IO) {
             send(HttpRequest(
-                url = address + "cart/$variantId",
+                url = address + "cart/$id",
                 method = "DELETE",
                 headers = mapOf("authorization" to "Bearer $accessToken")
             ))
         }
     }
 
-    suspend fun updateCartItemQuantity(variantId: String, quantity: Int): Boolean {
+    suspend fun updateCartItemQuantity(id: String, quantity: Int): Boolean {
         if(accessToken.isEmpty()) return false
         val body = """{"quantity": $quantity}"""
         val res = withContext(Dispatchers.IO) {
             send(HttpRequest(
-                url = address + "cart/$variantId",
+                url = address + "cart/$id",
                 method = "PATCH",
                 body = body,
                 headers = mapOf("authorization" to "Bearer $accessToken")
