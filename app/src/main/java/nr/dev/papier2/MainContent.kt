@@ -85,7 +85,7 @@ fun BaseHome(modifier: Modifier, controller: NavHostController) {
     )
     val navHost = rememberNavController()
     LaunchedEffect(Unit) {
-        HttpClient.getItemInCarts()
+        HttpClient.updateItemInCarts()
     }
     Box(modifier) {
         NavHost(
@@ -95,9 +95,6 @@ fun BaseHome(modifier: Modifier, controller: NavHostController) {
             composable(route = Route.HOME) {
                 selectedIdx = 0
                 HomeScreen(navHost)
-            }
-            composable(route = Route.PROFILE) {
-                ProfileScreen(controller, navHost)
             }
             composable(
                 route = Route.PRODUCTS_FULL,
@@ -127,7 +124,16 @@ fun BaseHome(modifier: Modifier, controller: NavHostController) {
                     }
                 )
             ) { backStackEntry ->
+                selectedIdx = 3
                 ProductDetailScreen(backStackEntry.arguments?.getString("id") ?: "n", navHost)
+            }
+            composable(route = Route.CART) {
+                selectedIdx = 3
+                CartScreen(navHost)
+            }
+            composable(route = Route.PROFILE) {
+                selectedIdx = 4
+                ProfileScreen(controller, navHost)
             }
         }
         if (selectedIdx <= 1) {
@@ -160,10 +166,7 @@ fun BaseHome(modifier: Modifier, controller: NavHostController) {
                                 Icon(
                                     painterResource(R.drawable.cart),
                                     tint = MaterialTheme.colorScheme.primary,
-                                    contentDescription = "Cart",
-                                    modifier = Modifier.clickable(
-                                        true,
-                                        onClick = { controller.navigate(Route.CART) })
+                                    contentDescription = "Cart"
                                 )
                             }
                             return@Tab
@@ -213,7 +216,8 @@ fun HomeScreen(controller: NavHostController) {
                 .padding(16.dp)
                 .offset(0.dp, 0.dp)
                 .zIndex(1f),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 painterResource(R.drawable.bars),
@@ -340,7 +344,7 @@ fun HomeScreen(controller: NavHostController) {
                                 Text(
                                     text = product.description,
                                     color = Color.White,
-                                    fontWeight = FontWeight.Thin,
+                                    fontWeight = FontWeight.Light,
                                     fontSize = MaterialTheme.typography.bodyMedium.fontSize
                                 )
                             }

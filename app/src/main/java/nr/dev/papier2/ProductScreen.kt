@@ -562,7 +562,7 @@ fun ProductDetailScreen(id: String, controller: NavHostController) {
                         loading2 = true
                         HttpClient.addVariantToCart(selectedVariant!!.id, quantity)
                         loading2 = false
-                        HttpClient.getItemInCarts()
+                        HttpClient.updateItemInCarts()
                     }
                 },
                 contentPadding = PaddingValues(vertical = 12.dp, horizontal = 24.dp)

@@ -4,6 +4,7 @@ import android.graphics.BitmapFactory
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import kotlinx.coroutines.Dispatchers
@@ -89,7 +90,7 @@ data class Category(
 
 data class Cart(
     val id: String,
-    val quantity: Int,
+    var quantity: Int,
     val variant: Variant,
     val product: Product
 )
@@ -97,7 +98,7 @@ data class Cart(
 object HttpClient {
     const val address = "https://eshop.jemaristudio.id/"
     var accessToken = ""
-    var itemInCarts = emptyList<Cart>()
+    var itemInCarts = mutableStateListOf<Cart>()
     var totalItemInCarts by mutableIntStateOf(0)
     var user: User? = null
     fun send(req: HttpRequest, getByte: Boolean = false): HttpResponse {
@@ -399,15 +400,15 @@ object HttpClient {
         }
     }
 
-    suspend fun getItemInCarts(): List<Cart> {
-        if(accessToken.isEmpty()) return emptyList()
+    suspend fun updateItemInCarts(): Boolean {
+        if(accessToken.isEmpty()) return false
         val res = withContext(Dispatchers.IO) {
             send(HttpRequest(
                 url = address + "cart",
                 headers = mapOf("authorization" to "Bearer $accessToken")
             ))
         }
-        if(res.body.isNullOrEmpty()) return emptyList()
+        if(res.body.isNullOrEmpty()) return false
         if(res.code == 200) {
             val json = JSONObject(res.body)
             val arr = json.getJSONArray("data")
@@ -437,11 +438,38 @@ object HttpClient {
                     variant = variant
                 ))
             }
-            itemInCarts = items
+            itemInCarts.clear()
+            itemInCarts.addAll(items)
             totalItemInCarts = items.sumOf { it.quantity }
-            return items
+            return true
         }
         println("errCode: ${res.code};msg: ${res.errors}")
-        return emptyList()
+        return false
+    }
+
+    suspend fun deleteVariantFromCart(variantId: String) {
+        if(accessToken.isEmpty()) return
+        withContext(Dispatchers.IO) {
+            send(HttpRequest(
+                url = address + "cart/$variantId",
+                method = "DELETE",
+                headers = mapOf("authorization" to "Bearer $accessToken")
+            ))
+        }
+    }
+
+    suspend fun updateCartItemQuantity(variantId: String, quantity: Int): Boolean {
+        if(accessToken.isEmpty()) return false
+        val body = """{"quantity": $quantity}"""
+        val res = withContext(Dispatchers.IO) {
+            send(HttpRequest(
+                url = address + "cart/$variantId",
+                method = "PATCH",
+                body = body,
+                headers = mapOf("authorization" to "Bearer $accessToken")
+            ))
+        }
+        if(res.body.isNullOrEmpty()) return false
+        return res.code == 200
     }
 }
