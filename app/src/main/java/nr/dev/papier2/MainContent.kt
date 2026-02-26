@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -33,6 +34,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -65,11 +68,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.navigation.NamedNavArgument
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import kotlinx.coroutines.delay
 
 
@@ -90,10 +96,31 @@ fun BaseHome(modifier: Modifier, controller: NavHostController) {
             startDestination = Route.HOME
         ) {
             composable(route = Route.HOME) {
+                selectedIdx = 0
                 HomeScreen(navHost)
             }
             composable(route = Route.PROFILE) {
                 ProfileScreen(controller)
+            }
+            composable(
+                route = Route.PRODUCTS_FULL,
+                arguments = listOf(
+                    navArgument("search") {
+                        type = NavType.StringType
+                        defaultValue = ""
+                    },
+                    navArgument("categoryId") {
+                        type = NavType.StringType
+                        defaultValue = "0"
+                    }
+                )
+            ) { backStackEntry ->
+                selectedIdx = 1
+                ProductsScreen(
+                    searchStr = backStackEntry.arguments?.getString("search") ?: "",
+                    categoryId = backStackEntry.arguments?.getString("categoryId") ?: "0",
+                    controller = controller,
+                )
             }
         }
         if (selectedIdx <= 1) {
@@ -123,7 +150,6 @@ fun BaseHome(modifier: Modifier, controller: NavHostController) {
 
 @Composable
 fun HomeScreen(controller: NavHostController) {
-    val imgLoader = rememberImageLoader()
     var products by remember { mutableStateOf(emptyList<Product>()) }
     var promoted by remember { mutableStateOf(emptyList<Product>()) }
     var filteredProducts by remember { mutableStateOf(emptyList<Product>()) }
@@ -186,7 +212,7 @@ fun HomeScreen(controller: NavHostController) {
                     contentDescription = "Cart",
                     modifier = Modifier.clickable(
                         true,
-                        onClick = { controller.navigate(Route.PRODUCTS) })
+                        onClick = { controller.navigate(Route.CART) })
                 )
             }
         }
@@ -304,7 +330,7 @@ fun HomeScreen(controller: NavHostController) {
                             fontWeight = FontWeight.Medium
                         )
                         TextButton(
-                            onClick = { controller.navigate(Route.PRODUCTS + "?category=$selectedCategory") }
+                            onClick = { controller.navigate(Route.PRODUCTS + "?categoryId=$selectedCategory") }
                         ) {
                             Text(text = "SEE ALL", letterSpacing = 2.sp)
                         }
@@ -361,26 +387,37 @@ fun HomeScreen(controller: NavHostController) {
 }
 
 @Composable
-fun ProductsScreen(search: String = "", categoryId: String = "0", controller: NavHostController) {
-    var search by remember { mutableStateOf("") }
+fun ProductsScreen(searchStr: String = "", categoryId: String = "0", controller: NavHostController) {
+    var search by remember { mutableStateOf(searchStr) }
     var categories by remember { mutableStateOf(emptyList<Category>()) }
     var products by remember { mutableStateOf(emptyList<Product>()) }
     var selectedCategory by remember { mutableStateOf(categoryId) }
+    var loading by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         if(categories.isEmpty()) {
+            loading = true
             products = HttpClient.getProducts(search, categoryId)
             categories = listOf(Category("0", "Semua Item", "Semua Item")) + HttpClient.getCategories()
             selectedCategory = categoryId
+            loading = false
         }
     }
 
     LaunchedEffect(selectedCategory) {
+        loading = true
         if(selectedCategory == "0") {
-
+            products = HttpClient.getProducts(search)
         } else {
-
+            products = HttpClient.getProducts(search, selectedCategory)
         }
+        loading = false
+    }
+    LaunchedEffect(search) {
+        delay(500)
+        loading = true
+        products = HttpClient.getProducts(search, selectedCategory)
+        loading = false
     }
 
     Box(
@@ -390,26 +427,30 @@ fun ProductsScreen(search: String = "", categoryId: String = "0", controller: Na
             Modifier
                 .fillMaxWidth()
                 .background(Color(253, 251, 247, 225))
-                .padding(16.dp)
+                .padding(24.dp)
                 .offset(0.dp, 0.dp)
                 .zIndex(1f),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(
                     painterResource(R.drawable.arr_back),
                     tint = Color.Gray,
-                    modifier = Modifier.clickable(true, onClick = { controller.popBackStack() }),
+                    modifier = Modifier.clickable(true, onClick = { controller.navigateUp() }),
                     contentDescription = "Back"
                 )
+                Spacer(Modifier.width(12.dp))
                 IconTextField(
-                    value =search,
+                    value = search,
                     onValueChange = {search = it},
-                    icon = ImageVector.vectorResource(R.drawable.search)
+                    icon = ImageVector.vectorResource(R.drawable.search),
+                    modifier = Modifier.weight(1f)
                 )
+                Spacer(Modifier.width(12.dp))
                 Box(
                     Modifier.clickable(onClick = {})
                 ) {
@@ -445,21 +486,68 @@ fun ProductsScreen(search: String = "", categoryId: String = "0", controller: Na
         }
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
-            modifier = Modifier.fillMaxSize().padding(32.dp)
+            modifier = Modifier.fillMaxSize().padding(32.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item(span = {GridItemSpan(2)}) {
-                Column(Modifier.fillMaxWidth()) {
-                    Spacer(Modifier.height(100.dp))
+                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Spacer(Modifier.height(120.dp))
                     HorizontalDivider()
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Text("Discover", color = MaterialTheme.colorScheme.primary, fontSize = MaterialTheme.typography.headlineMedium.fontSize)
-                        Text("$ item found", color = Color.Gray, fontSize = MaterialTheme.typography.headlineSmall.fontSize)
+                        Text("${products.size} item found", color = Color.Gray, fontSize = MaterialTheme.typography.headlineSmall.fontSize)
                     }
                     Spacer(Modifier.height(12.dp))
+                    if(loading) {
+                        Spacer(Modifier.height(18.dp))
+                        CircularProgressIndicator(Modifier.size(32.dp))
+                    }
                 }
             }
-            items(products) { item ->
-
+            items(products) { product ->
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    NetworkImage(
+                        product.imageUrl,
+                        contentDescription = product.name,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(16.dp))
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        contentScale = ContentScale.FillWidth
+                    )
+                    Text(
+                        product.name,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        product.categories[0].name,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
+                        fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                        color = Color.Gray
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Rp${product.variants[0].price}", color = MaterialTheme.colorScheme.primary, fontSize = MaterialTheme.typography.bodySmall.fontSize)
+                        TextButton(
+                            onClick = {},
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(50)),
+                            colors = ButtonDefaults.textButtonColors(
+                                containerColor = Color(
+                                    0xffffedd4
+                                )
+                            )
+                        ) {
+                            Text("View", fontSize = MaterialTheme.typography.bodyMedium.fontSize, color = Color(0xff7e2a0c))
+                        }
+                    }
+                }
             }
 
         }

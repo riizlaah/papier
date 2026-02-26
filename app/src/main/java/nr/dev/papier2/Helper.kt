@@ -20,6 +20,7 @@ object Route {
     const val BASE_HOME = "base_home"
     const val HOME = "home"
     const val PROFILE = "profile"
+    const val PRODUCTS_FULL = "products?search={search}&categoryId={categoryId}"
     const val PRODUCTS = "products"
     const val PRODUCT_DETAIL = "products/{id}"
     const val HISTORY = "products"

@@ -52,13 +52,12 @@ import kotlinx.coroutines.launch
 
 
 @Composable
-fun IconTextField(value: String, onValueChange: (String) -> Unit, icon: ImageVector) {
+fun IconTextField(value: String, onValueChange: (String) -> Unit, icon: ImageVector, modifier: Modifier = Modifier.fillMaxWidth()) {
     BasicTextField(
         value = value,
         onValueChange = onValueChange,
         singleLine = true,
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = modifier
             .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp)),
         decorationBox = { innerTextF ->
             Row(
@@ -158,7 +157,7 @@ fun LoginScreen(modifier: Modifier, controller: NavHostController) {
                     when(stat) {
                         "ok" -> {
                             controller.navigate(Route.BASE_HOME) {
-                                popUpTo(controller.graph.findStartDestination().id) {
+                                popUpTo(controller.graph.id) {
                                     inclusive = true
                                 }
                             }
