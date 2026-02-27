@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -39,16 +40,28 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavHostController
+import kotlinx.coroutines.delay
 import java.time.format.DateTimeFormatter
+
+data class Status(val bgColor: Color, val fgColor: Color, val rId: Int)
 
 @Composable
 fun TransactionScreen(controller: NavHostController) {
     val availableFilter = listOf("All", "Active", "Completed")
+    val statuses = mapOf(
+        "pending" to Status(Color(0xfffffbeb), Color(0xffe17100), R.drawable.clock),
+        "processed" to Status(Color(0xffeff6ff), Color(0xff155dfc), R.drawable.box),
+        "delivered" to Status(Color(0xfff0fdf4), Color(0xff00a63e), R.drawable.truck),
+        "finished" to Status(Color(0xfff5f5f5), Color(0xff737373), R.drawable.checked)
+    )
     var transactions by remember { mutableStateOf(emptyList<Transaction>()) }
     var filteredTransaction by remember { mutableStateOf(emptyList<Transaction>()) }
     var selectedFilter by remember { mutableStateOf(availableFilter[0]) }
@@ -57,6 +70,16 @@ fun TransactionScreen(controller: NavHostController) {
         if(transactions.isEmpty()) {
             transactions = HttpClient.getTransactions()
             filteredTransaction = transactions
+        }
+        while (true) {
+            delay(10000)
+            transactions = HttpClient.getTransactions()
+            when(selectedFilter) {
+                "All" -> filteredTransaction = transactions
+                "Active" -> filteredTransaction = transactions.filter { it.status in listOf("processed", "pending", "delivered") }
+                "Completed" -> filteredTransaction = transactions.filter { it.status == "completed" }
+            }
+
         }
     }
 
@@ -96,15 +119,15 @@ fun TransactionScreen(controller: NavHostController) {
                         Button(
                             onClick = {selectedFilter = name}
                         ) {
-                            Text(name.replaceFirstChar { it.uppercase() })
+                            Text(name)
                         }
                     } else {
                         OutlinedButton(
                             onClick = {selectedFilter = name},
                             border = BorderStroke(1.dp, Color.LightGray),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.LightGray)
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Gray)
                         ) {
-                            Text(name.replaceFirstChar { it.uppercase() })
+                            Text(name)
                         }
                     }
                 }
@@ -117,14 +140,31 @@ fun TransactionScreen(controller: NavHostController) {
             items(filteredTransaction) { item ->
                 Column(Modifier.padding(horizontal = 32.dp).clip(RoundedCornerShape(20.dp))) {
                     Column(Modifier.fillMaxWidth().background(Color(0xfffafafa)).padding(12.dp)) {
-                        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                        Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                             Text(
                                 item.updatedAt.format(
-                                    DateTimeFormatter.ofPattern("MMM 22, YYYY")
+                                    DateTimeFormatter.ofPattern("MMM dd, yyyy")
                                 ),
                                 color = Color.Gray
                             )
-                            Text(item.status.uppercase())
+                            if(!statuses.containsKey(item.status)) return@Row
+                            val data = statuses[item.status]!!
+                            Row(
+                                modifier = Modifier
+                                    .padding(vertical = 6.dp)
+                                    .clip(CircleShape)
+                                    .background(data.bgColor)
+                                    .padding(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(painterResource(data.rId), contentDescription = item.status, modifier = Modifier.size(16.dp), tint = data.fgColor)
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    text = item.status.uppercase(),
+                                    color = data.fgColor,
+                                    fontSize = MaterialTheme.typography.bodySmall.fontSize
+                                )
+                            }
                         }
                         Text("ORD-${item.id}", fontWeight = FontWeight.Medium)
                     }
@@ -167,3 +207,4 @@ fun TransactionScreen(controller: NavHostController) {
         }
     }
 }
+
