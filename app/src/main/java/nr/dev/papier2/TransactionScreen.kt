@@ -112,7 +112,7 @@ fun TransactionScreen(controller: NavHostController) {
         }
         LazyColumn(verticalArrangement = Arrangement.spacedBy(20.dp), modifier = Modifier.fillMaxSize()) {
             item {
-                Spacer(Modifier.height(92.dp))
+                Spacer(Modifier.height(108.dp))
             }
             items(filteredTransaction) { item ->
                 Column(Modifier.padding(horizontal = 32.dp).clip(RoundedCornerShape(20.dp))) {

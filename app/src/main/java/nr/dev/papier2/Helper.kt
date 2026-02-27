@@ -550,6 +550,11 @@ object HttpClient {
             val items = mutableListOf<TransactionItem>()
             for(j in 0 until itemsJSON.length()) {
                 val item = itemsJSON.getJSONObject(j)
+                val imageUrl = if(item.getString("productImage").isNullOrEmpty() || item.getString("productImage") == "null") {
+                    "https://placehold.co/400x400/png?text=EMPTY"
+                } else {
+                    item.getString("productImage").replace("?", "/png?")
+                }
                 items.add(TransactionItem(
                     id = item.getString("id"),
                     transactionId = item.getString("transactionId"),
@@ -558,6 +563,7 @@ object HttpClient {
                     variantName = item.getString("variantName"),
                     price = item.getString("price"),
                     quantity = item.getInt("quantity"),
+                    imageUrl = imageUrl
                 ))
             }
             transactions.add(Transaction(
