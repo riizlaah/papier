@@ -50,7 +50,7 @@ fun NetworkImage(
     url: String,
     modifier: Modifier = Modifier,
     contentDescription: String? = null,
-    contentScale: ContentScale = ContentScale.FillHeight
+    contentScale: ContentScale = ContentScale.Crop
 ) {
     var imgBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
     var isLoading by remember { mutableStateOf(false) }

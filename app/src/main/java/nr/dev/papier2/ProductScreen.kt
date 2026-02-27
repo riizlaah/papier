@@ -215,7 +215,6 @@ fun ProductsScreen(
                             .clip(RoundedCornerShape(16.dp))
                             .fillMaxWidth()
                             .height(200.dp),
-                        contentScale = ContentScale.FillWidth
                     )
                     Text(
                         product.name,

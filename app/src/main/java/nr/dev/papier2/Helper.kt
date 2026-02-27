@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import kotlinx.coroutines.Dispatchers
@@ -15,6 +16,8 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import java.time.OffsetDateTime
+import kotlin.time.Instant
 
 object Route {
     // auth
@@ -28,7 +31,7 @@ object Route {
     const val PRODUCTS_FULL = "products?search={search}&categoryId={categoryId}"
     const val PRODUCTS = "products"
     const val PRODUCT_DETAIL_FULL = "products/{id}"
-    const val HISTORY = "products"
+    const val TRANSACTIONS = "transactions"
     const val CART = "cart"
 }
 
@@ -36,7 +39,7 @@ fun idxToRoute(idx: Int): String {
     return when (idx) {
         0 -> Route.HOME
         1 -> Route.PRODUCTS
-        2 -> Route.HISTORY
+        2 -> Route.TRANSACTIONS
         3 -> Route.CART
         4 -> Route.PROFILE
         else -> Route.HOME
@@ -96,11 +99,34 @@ data class Cart(
     val product: Product
 )
 
+data class Transaction(
+    val id: String,
+    val subtotal: String,
+    val discount: String,
+    val total: String,
+    val status: String,
+    val paidAt: OffsetDateTime,
+    val createdAt: OffsetDateTime,
+    val updatedAt: OffsetDateTime,
+    val items: List<TransactionItem> = emptyList()
+)
+
+data class TransactionItem(
+    val id: String,
+    val transactionId: String,
+    val variantId: String,
+    val productName: String,
+    val variantName: String,
+    val price: String,
+    val quantity: Int,
+    val imageUrl: String = "https://placehold.co/400x400/png?text=EMPTY"
+
+)
+
 object HttpClient {
     const val address = "https://eshop.jemaristudio.id/"
     var accessToken = ""
     var itemInCarts = mutableStateListOf<Cart>()
-//    var totalItemInCarts by derivedStateOf { itemInCarts.size }
     var user: User? = null
     fun send(req: HttpRequest, getByte: Boolean = false): HttpResponse {
         val conn = URL(req.url).openConnection() as HttpURLConnection
@@ -244,8 +270,8 @@ object HttpClient {
                 val categories = prod.getJSONArray("categories")
                 val categories2 = mutableListOf<Category>()
 
-                for (i in 0 until categories.length()) {
-                    val obj = categories.getJSONObject(i)
+                for (j in 0 until categories.length()) {
+                    val obj = categories.getJSONObject(j)
                     categories2.add(
                         Category(
                             id = obj.getString("id"),
@@ -254,8 +280,8 @@ object HttpClient {
                         )
                     )
                 }
-                for (i in 0 until variants.length()) {
-                    val obj = variants.getJSONObject(i)
+                for (j in 0 until variants.length()) {
+                    val obj = variants.getJSONObject(j)
                     variants2.add(
                         Variant(
                             id = obj.getString("id"),
@@ -472,5 +498,80 @@ object HttpClient {
         }
         if(res.body.isNullOrEmpty()) return false
         return res.code == 200
+    }
+
+    suspend fun validateCoupon(coupon: String): Boolean {
+        if(accessToken.isEmpty()) return false
+        val body = """{"code": "$coupon"}"""
+        val res = withContext(Dispatchers.IO) {
+            send(
+                HttpRequest(
+                    url = address + "coupons/validate",
+                    method = "POST",
+                    body = body,
+                    headers = mapOf("authorization" to "Bearer $accessToken")
+                )
+            )
+        }
+        return res.code == 200
+    }
+
+    suspend fun checkout(coupon: String): Boolean {
+        if(accessToken.isEmpty()) return false
+        val body = """{"couponCode": "$coupon"}"""
+        val res = withContext(Dispatchers.IO) {
+            send(
+                HttpRequest(
+                    url = address + "transactions",
+                    method = "POST",
+                    body = body,
+                    headers = mapOf("authorization" to "Bearer $accessToken")
+                )
+            )
+        }
+        return res.code == 201
+    }
+
+    suspend fun getTransactions(): List<Transaction> {
+        if(accessToken.isEmpty()) return emptyList()
+        val res = withContext(Dispatchers.IO) {
+            send(HttpRequest(
+                url = address + "transactions",
+                headers = mapOf("authorization" to "Bearer $accessToken")
+            ))
+        }
+        if(res.code != 200 || res.body.isNullOrEmpty()) return emptyList()
+        val json = JSONObject(res.body)
+        val arr = json.getJSONArray("data")
+        val transactions = mutableListOf<Transaction>()
+        for(i in 0 until arr.length()) {
+            val obj = arr.getJSONObject(i)
+            val itemsJSON = obj.getJSONArray("items")
+            val items = mutableListOf<TransactionItem>()
+            for(j in 0 until itemsJSON.length()) {
+                val item = itemsJSON.getJSONObject(j)
+                items.add(TransactionItem(
+                    id = item.getString("id"),
+                    transactionId = item.getString("transactionId"),
+                    variantId = item.getString("variantId"),
+                    productName = item.getString("productName"),
+                    variantName = item.getString("variantName"),
+                    price = item.getString("price"),
+                    quantity = item.getInt("quantity"),
+                ))
+            }
+            transactions.add(Transaction(
+                id = obj.getString("id"),
+                subtotal = obj.getString("subtotal"),
+                total = obj.getString("total"),
+                discount = obj.getString("discount"),
+                status = obj.getString("status"),
+                paidAt = OffsetDateTime.parse(obj.getString("paidAt")),
+                createdAt = OffsetDateTime.parse(obj.getString("createdAt")),
+                updatedAt = OffsetDateTime.parse(obj.getString("updatedAt")),
+                items = items
+            ))
+        }
+        return transactions
     }
 }

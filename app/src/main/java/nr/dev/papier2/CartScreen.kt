@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package nr.dev.papier2
 
 import androidx.compose.foundation.background
@@ -17,20 +19,28 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -48,8 +58,10 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavHostController
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.max
 
@@ -90,6 +102,10 @@ fun CartIcon(controller: NavHostController) {
 @Composable
 fun CartScreen(controller: NavHostController) {
     var promoCode by remember { mutableStateOf("") }
+    var usedCouponCode by remember { mutableStateOf("") }
+    var showDialog by remember { mutableStateOf(false) }
+    var msg by remember { mutableStateOf("") }
+    var applyBtnTxt by remember { mutableStateOf("Apply") }
     val freeShippingThreshold = 50000
     val shippingFee = 5000
     val scope = rememberCoroutineScope()
@@ -99,6 +115,31 @@ fun CartScreen(controller: NavHostController) {
     }
 
     Box(Modifier.fillMaxSize()) {
+        if(showDialog) {
+            BasicAlertDialog(
+                onDismissRequest = {showDialog = false},
+            ) {
+                Column(
+                    Modifier
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Color.White)
+                        .padding(24.dp),
+                ) {
+                    Text("Information", fontWeight = FontWeight.Bold, fontSize = MaterialTheme.typography.headlineLarge.fontSize)
+                    Text(msg, lineHeight = MaterialTheme.typography.bodyMedium.lineHeight, fontSize = MaterialTheme.typography.bodyMedium.fontSize)
+                    Spacer(Modifier.height(12.dp))
+                    TextButton(onClick = {
+                        showDialog = false
+                        controller.navigate(Route.TRANSACTIONS)
+                        scope.launch {
+                            HttpClient.updateItemInCarts()
+                        }
+                    }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Ok", fontSize = MaterialTheme.typography.headlineSmall.fontSize)
+                    }
+                }
+            }
+        }
         Row(
             Modifier
                 .fillMaxWidth()
@@ -236,23 +277,64 @@ fun CartScreen(controller: NavHostController) {
             item {
                 Column {
                     Text("Promo Code")
-                    Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        IconTextField(
-                            icon = ImageVector.vectorResource(R.drawable.tag),
-                            value = promoCode,
-                            onValueChange = {promoCode = it},
-                            modifier = Modifier.weight(1f)
-                        )
-                        Spacer(Modifier.width(16.dp))
-                        Button(
-                            onClick = {},
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xff171717),
-                                contentColor = Color.White
-                            ),
-                            contentPadding = PaddingValues(12.dp)
+                    if(usedCouponCode == "") {
+                        Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            IconTextField(
+                                icon = ImageVector.vectorResource(R.drawable.tag),
+                                value = promoCode,
+                                onValueChange = {promoCode = it},
+                                modifier = Modifier.weight(1f)
+                            )
+                            Spacer(Modifier.width(16.dp))
+                            Button(
+                                onClick = {
+                                    applyBtnTxt = "Applying..."
+                                    scope.launch {
+                                        if(HttpClient.validateCoupon(promoCode)) {
+                                            usedCouponCode = promoCode
+                                            applyBtnTxt = "Apply"
+                                        } else {
+                                            applyBtnTxt = "Not Valid"
+                                            delay(1000)
+                                            applyBtnTxt = "Apply"
+                                        }
+                                    }
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xff171717),
+                                    contentColor = Color.White
+                                ),
+                                contentPadding = PaddingValues(12.dp)
+                            ) {
+                                Text(applyBtnTxt)
+                            }
+                        }
+                    } else {
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xfff0fdf4))
+                                .border(1.dp, Color(0xffb9f8cf))
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("Apply")
+                            Icon(
+                                painterResource(R.drawable.tag),
+                                contentDescription = "Tag",
+                                tint = Color(0xff00a63e)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text("Code $usedCouponCode applied", color = Color(0xff016630))
+                                Text("You saved ?", fontWeight = FontWeight.Light)
+                            }
+                            Icon(
+                                Icons.Default.Close,
+                                tint = Color(0xff00a63e),
+                                contentDescription = "Close",
+                                modifier = Modifier.clickable(onClick = {usedCouponCode = ""})
+                            )
                         }
                     }
                     Spacer(Modifier.height(12.dp))
@@ -288,7 +370,7 @@ fun CartScreen(controller: NavHostController) {
                             textAlign = TextAlign.Center
                         )
                     }
-                    Spacer(Modifier.height(128.dp))
+                    Spacer(Modifier.height(192.dp))
                 }
             }
         }
@@ -309,7 +391,16 @@ fun CartScreen(controller: NavHostController) {
             }
             Spacer(Modifier.height(16.dp))
             Button(
-                onClick = {},
+                onClick = {
+                    scope.launch {
+                        if(HttpClient.checkout(usedCouponCode)) {
+                            msg = "Order placed successfully! Check your transactions."
+                        } else {
+                            msg = "Order Failed."
+                        }
+                        showDialog = true
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(),
                 contentPadding = PaddingValues(16.dp)
             ) {
