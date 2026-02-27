@@ -4,6 +4,7 @@ package nr.dev.papier2
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,7 +18,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -32,9 +36,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.MailOutline
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -57,8 +63,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -152,23 +160,8 @@ fun BaseHome(modifier: Modifier, controller: NavHostController) {
                         },
                         modifier = Modifier.padding(vertical = 12.dp)
                     ) {
-                        if(idx == 3 && HttpClient.itemInCarts.size > 0) {
-                            BadgedBox(
-                                badge = {
-                                    Badge(
-                                        containerColor = Color(0xfff54a00),
-                                        contentColor = Color.White
-                                    ) {
-                                        Text("${HttpClient.itemInCarts.size}")
-                                    }
-                                }
-                            ) {
-                                Icon(
-                                    painterResource(R.drawable.cart),
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    contentDescription = "Cart"
-                                )
-                            }
+                        if(idx == 3 && HttpClient.itemInCarts.isNotEmpty()) {
+                            CartIcon(navHost)
                             return@Tab
                         }
                         Icon(painterResource(id), contentDescription = idx.toString())
@@ -240,36 +233,7 @@ fun HomeScreen(controller: NavHostController) {
                     )
                 )
                 Spacer(Modifier.width(8.dp))
-                if(HttpClient.itemInCarts.isNotEmpty()) {
-                    BadgedBox(
-                        modifier = Modifier.clickable(onClick = {
-                            controller.navigate(Route.CART)
-                        }),
-                        badge = {
-                            Badge(
-                                containerColor = Color(0xfff54a00),
-                                contentColor = Color.White
-                            ) {
-                                Text("${HttpClient.itemInCarts.size}")
-                            }
-                        }
-                    ) {
-                        Icon(
-                            painterResource(R.drawable.cart),
-                            tint = MaterialTheme.colorScheme.primary,
-                            contentDescription = "Cart"
-                        )
-                    }
-                } else {
-                    Icon(
-                        painterResource(R.drawable.cart),
-                        tint = MaterialTheme.colorScheme.primary,
-                        contentDescription = "Cart",
-                        modifier = Modifier.clickable(
-                            true,
-                            onClick = { controller.navigate(Route.CART) })
-                    )
-                }
+                CartIcon(controller)
             }
         }
 
@@ -449,16 +413,15 @@ fun HomeScreen(controller: NavHostController) {
 
 @Composable
 fun ProfileScreen(rootController: NavHostController, appController: NavHostController) {
-    val scrollState = rememberScrollState()
-    Column(
+    val user = HttpClient.user
+    Box(
         Modifier
             .fillMaxSize()
-            .padding(32.dp)
     ) {
         Row(
             Modifier
                 .fillMaxWidth()
-                .padding(18.dp)
+                .padding(16.dp)
         ) {
             TextButton(onClick = { appController.popBackStack() }) {
                 Icon(painterResource(R.drawable.arr_back), contentDescription = "Back")
@@ -466,29 +429,159 @@ fun ProfileScreen(rootController: NavHostController, appController: NavHostContr
                 Text("My Profile")
             }
         }
-        Column(Modifier.verticalScroll(scrollState)) {
-            Text(HttpClient.user?.name ?: "?")
-            OutlinedButton(
-                onClick = {
-                    HttpClient.user = null
-                    HttpClient.accessToken = ""
-                    rootController.navigate(Route.BASE_AUTH) {
-                        popUpTo(rootController.graph.id) {
-                            inclusive = true
+        LazyColumn(Modifier.fillMaxSize().padding(32.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+            item {
+                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Spacer(Modifier.height(92.dp))
+                    Box {
+                        Box(Modifier.size(162.dp).clip(CircleShape).background(Color.White).align(Alignment.Center)) {
+                            Box(Modifier
+                                .align(Alignment.Center)
+                                .padding(32.dp)
+                            ) {
+                                val initial = user!!.name.split(" ")
+                                    .joinToString { it.first().uppercase() }
+                                Text(initial, fontSize = MaterialTheme.typography.displayLarge.fontSize)
+                            }
                         }
+                        // NetworkImage(...)
+                        Icon(
+                            painterResource(R.drawable.camera),
+                            tint = Color.White,
+                            contentDescription = "Camera",
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary)
+                                .border(2.dp, Color.White, CircleShape)
+                                .padding(8.dp)
+                        )
                     }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                border = BorderStroke(0.5.dp, Color(255, 0, 0, 150)),
-                contentPadding = PaddingValues(vertical = 8.dp)
-            ) {
-                Icon(
-                    painterResource(R.drawable.logout),
-                    tint = Color.Red,
-                    contentDescription = "Logout"
-                )
-                Text("Log Out")
+                    Spacer(Modifier.height(8.dp))
+                    Text(HttpClient.user!!.name, color = MaterialTheme.colorScheme.primary, fontSize = MaterialTheme.typography.displaySmall.fontSize)
+//                    Text(HttpClient.user!!.email, color = Color.Gray)
+                }
             }
+            item {
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Color.White)
+                        .border(1.dp, Color.LightGray, RoundedCornerShape(20.dp))
+                        .padding(20.dp)
+                ) {
+                    InfoRow(
+                        ImageVector.vectorResource(R.drawable.user),
+                        "NAME",
+                        user!!.name
+                    )
+                    InfoRow(
+                        Icons.Default.MailOutline,
+                        "EMAIL",
+                        user.email
+                    )
+                }
+            }
+            item {
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Color.White)
+                        .border(1.dp, Color.LightGray, RoundedCornerShape(20.dp))
+                        .padding(20.dp)
+                ) {
+                    ActionRow(
+                        ImageVector.vectorResource(R.drawable.pin),
+                        "Shipping Addresses"
+                    )
+                    ActionRow(
+                        ImageVector.vectorResource(R.drawable.card),
+                        "Payment Methods"
+                    )
+                    ActionRow(
+                        ImageVector.vectorResource(R.drawable.gear),
+                        "Settings"
+                    )
+                }
+            }
+            item {
+                OutlinedButton(
+                    onClick = {
+                        rootController.navigate(Route.BASE_AUTH) {
+                            popUpTo(rootController.graph.id) {
+                                inclusive = true
+                            }
+                        }
+                        HttpClient.accessToken = ""
+                        HttpClient.user = null
+                    },
+                    border = BorderStroke(1.dp, Color(0xffffe2e2)),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red),
+                    contentPadding = PaddingValues(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(painterResource(R.drawable.logout), contentDescription = "Log Out")
+                    Spacer(Modifier.width(8.dp))
+                    Text("Log Out")
+                }
+            }
+
         }
+    }
+}
+
+@Composable
+fun InfoRow(icon: ImageVector, label: String, value: String) {
+    Row(
+        Modifier.padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            icon,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier
+                .clip(CircleShape)
+                .background(Color(0xfffff7ed))
+                .padding(12.dp)
+                .requiredSize(24.dp),
+            contentDescription = label
+        )
+        Spacer(Modifier.width(8.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                text = label,
+                color = Color.Gray,
+                letterSpacing = 1.sp
+            )
+            Text(
+                text = value,
+                fontWeight = FontWeight.Medium
+            )
+        }
+    }
+}
+
+@Composable
+fun ActionRow(
+    startIcon: ImageVector,
+    label: String,
+    onClick: () -> Unit = {},
+    endIcon: ImageVector = ImageVector.vectorResource(R.drawable.top_arr_right),
+) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 16.dp).clickable(onClick = onClick), verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            startIcon,
+            tint = Color.Gray,
+            contentDescription = label
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(label, modifier = Modifier.weight(1f))
+        Icon(
+            endIcon,
+            tint = Color.Gray,
+            contentDescription = "More"
+        )
     }
 }

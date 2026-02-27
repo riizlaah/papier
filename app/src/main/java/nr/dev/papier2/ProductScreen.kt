@@ -135,36 +135,7 @@ fun ProductsScreen(
                     modifier = Modifier.weight(1f)
                 )
                 Spacer(Modifier.width(12.dp))
-                if(HttpClient.itemInCarts.size > 0) {
-                    BadgedBox(
-                        modifier = Modifier.clickable(onClick = {
-                            controller.navigate(Route.CART)
-                        }),
-                        badge = {
-                            Badge(
-                                containerColor = Color(0xfff54a00),
-                                contentColor = Color.White
-                            ) {
-                                Text("${HttpClient.itemInCarts.size}")
-                            }
-                        }
-                    ) {
-                        Icon(
-                            painterResource(R.drawable.cart),
-                            tint = MaterialTheme.colorScheme.primary,
-                            contentDescription = "Cart"
-                        )
-                    }
-                } else {
-                    Icon(
-                        painterResource(R.drawable.cart),
-                        tint = MaterialTheme.colorScheme.primary,
-                        contentDescription = "Cart",
-                        modifier = Modifier.clickable(
-                            true,
-                            onClick = { controller.navigate(Route.CART) })
-                    )
-                }
+                CartIcon(controller)
             }
             LazyRow(Modifier.fillMaxWidth()) {
                 items(categories) { item ->

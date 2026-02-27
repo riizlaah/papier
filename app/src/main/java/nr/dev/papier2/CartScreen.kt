@@ -23,6 +23,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -50,6 +52,40 @@ import androidx.compose.ui.zIndex
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.launch
 import kotlin.math.max
+
+@Composable
+fun CartIcon(controller: NavHostController) {
+    if(HttpClient.itemInCarts.isNotEmpty()) {
+        BadgedBox(
+            modifier = Modifier.clickable(onClick = {
+                controller.navigate(Route.CART)
+            }),
+            badge = {
+                Badge(
+                    containerColor = Color(0xfff54a00),
+                    contentColor = Color.White
+                ) {
+                    Text("${HttpClient.itemInCarts.size}")
+                }
+            }
+        ) {
+            Icon(
+                painterResource(R.drawable.cart),
+                tint = MaterialTheme.colorScheme.primary,
+                contentDescription = "Cart"
+            )
+        }
+    } else {
+        Icon(
+            painterResource(R.drawable.cart),
+            tint = MaterialTheme.colorScheme.primary,
+            contentDescription = "Cart",
+            modifier = Modifier.clickable(
+                true,
+                onClick = { controller.navigate(Route.CART) })
+        )
+    }
+}
 
 @Composable
 fun CartScreen(controller: NavHostController) {

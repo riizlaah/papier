@@ -69,7 +69,7 @@ fun IconTextField(value: String, onValueChange: (String) -> Unit, icon: ImageVec
                 Icon(icon, contentDescription = "Icon", tint = Color.LightGray)
                 Box(Modifier
                     .weight(1f)
-                    .padding(start = 12.dp)) {
+                    .padding(start = 6.dp)) {
                     innerTextF()
                 }
             }
@@ -99,7 +99,8 @@ fun PasswordField(state: TextFieldState, showPassword: Boolean, onTogglePassword
                 Icon(Icons.Default.Lock, contentDescription = "Lock", tint = Color.LightGray)
                 Box(Modifier
                     .weight(1f)
-                    .padding(start = 12.dp)) {
+                    .padding(start = 6.dp)
+                ) {
                     innerTextF()
                 }
                 Icon(
@@ -153,8 +154,7 @@ fun LoginScreen(modifier: Modifier, controller: NavHostController) {
                 }
                 scope.launch {
                     loading = true
-                    val stat = HttpClient.login(email, passwordState.text.toString())
-                    when(stat) {
+                    when(val stat = HttpClient.login(email, passwordState.text.toString())) {
                         "ok" -> {
                             controller.navigate(Route.BASE_HOME) {
                                 popUpTo(controller.graph.id) {
@@ -164,10 +164,13 @@ fun LoginScreen(modifier: Modifier, controller: NavHostController) {
                         }
                         "not ok" -> {
                             errorMsg = "Login Failed"
+                            loading = false
                         }
-                        else -> errorMsg = stat
+                        else -> {
+                            errorMsg = stat
+                            loading = false
+                        }
                     }
-                    loading = false
                 }
             },
             modifier = Modifier
