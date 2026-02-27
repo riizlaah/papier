@@ -134,7 +134,7 @@ fun ProductsScreen(
                 Spacer(Modifier.width(12.dp))
                 CartIcon(controller)
             }
-            LazyRow(Modifier.fillMaxWidth()) {
+            LazyRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(categories) { item ->
                     if (selectedCategory == item.id) {
                         Button(
@@ -166,7 +166,8 @@ fun ProductsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(32.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item(span = { GridItemSpan(2) }) {
                 Column(
@@ -200,7 +201,6 @@ fun ProductsScreen(
             }
             items(products) { product ->
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.clickable(onClick = {
                         controller.navigate(Route.PRODUCTS + "/${product.id}")
                     })
@@ -213,6 +213,7 @@ fun ProductsScreen(
                             .fillMaxWidth()
                             .height(200.dp),
                     )
+                    Spacer(Modifier.height(12.dp))
                     Text(
                         product.name,
                         softWrap = false,
@@ -226,6 +227,7 @@ fun ProductsScreen(
                         fontSize = MaterialTheme.typography.bodySmall.fontSize,
                         color = Color.Gray
                     )
+                    Spacer(Modifier.height(4.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,

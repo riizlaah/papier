@@ -116,7 +116,7 @@ fun BaseHome(modifier: Modifier, controller: NavHostController) {
                 ProductsScreen(
                     searchStr = backStackEntry.arguments?.getString("search") ?: "",
                     categoryId = backStackEntry.arguments?.getString("categoryId") ?: "0",
-                    controller = controller,
+                    controller = navHost,
                 )
             }
             composable(
@@ -455,7 +455,7 @@ fun ProfileScreen(rootController: NavHostController, appController: NavHostContr
                                     .padding(32.dp)
                             ) {
                                 val initial = user!!.name.split(" ")
-                                    .joinToString { it.first().uppercase() }
+                                    .joinToString(separator = "") { it.first().uppercase() }
                                 Text(
                                     initial,
                                     fontSize = MaterialTheme.typography.displayLarge.fontSize
