@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -40,10 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -60,33 +56,38 @@ fun TransactionScreen(controller: NavHostController) {
         "pending" to Status(Color(0xfffffbeb), Color(0xffe17100), R.drawable.clock),
         "processed" to Status(Color(0xffeff6ff), Color(0xff155dfc), R.drawable.box),
         "delivered" to Status(Color(0xfff0fdf4), Color(0xff00a63e), R.drawable.truck),
-        "finished" to Status(Color(0xfff5f5f5), Color(0xff737373), R.drawable.checked)
+        "finished" to Status(Color(0xfff5f5f5), Color(0xff737373), R.drawable.checked_round)
     )
     var transactions by remember { mutableStateOf(emptyList<Transaction>()) }
     var filteredTransaction by remember { mutableStateOf(emptyList<Transaction>()) }
     var selectedFilter by remember { mutableStateOf(availableFilter[0]) }
 
     LaunchedEffect(Unit) {
-        if(transactions.isEmpty()) {
+        if (transactions.isEmpty()) {
             transactions = HttpClient.getTransactions()
             filteredTransaction = transactions
         }
         while (true) {
             delay(10000)
             transactions = HttpClient.getTransactions()
-            when(selectedFilter) {
+            when (selectedFilter) {
                 "All" -> filteredTransaction = transactions
-                "Active" -> filteredTransaction = transactions.filter { it.status in listOf("processed", "pending", "delivered") }
-                "Completed" -> filteredTransaction = transactions.filter { it.status == "completed" }
+                "Active" -> filteredTransaction =
+                    transactions.filter { it.status in listOf("processed", "pending", "delivered") }
+
+                "Completed" -> filteredTransaction =
+                    transactions.filter { it.status == "completed" }
             }
 
         }
     }
 
     LaunchedEffect(selectedFilter) {
-        when(selectedFilter) {
+        when (selectedFilter) {
             "All" -> filteredTransaction = transactions
-            "Active" -> filteredTransaction = transactions.filter { it.status in listOf("processed", "pending", "delivered") }
+            "Active" -> filteredTransaction =
+                transactions.filter { it.status in listOf("processed", "pending", "delivered") }
+
             "Completed" -> filteredTransaction = transactions.filter { it.status == "completed" }
         }
     }
@@ -110,20 +111,24 @@ fun TransactionScreen(controller: NavHostController) {
                         })
                 )
                 Spacer(Modifier.width(16.dp))
-                Text("Transactions", fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.primary)
+                Text(
+                    "Transactions",
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
             Spacer(Modifier.height(8.dp))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(availableFilter) { name ->
-                    if(selectedFilter == name) {
+                    if (selectedFilter == name) {
                         Button(
-                            onClick = {selectedFilter = name}
+                            onClick = { selectedFilter = name }
                         ) {
                             Text(name)
                         }
                     } else {
                         OutlinedButton(
-                            onClick = {selectedFilter = name},
+                            onClick = { selectedFilter = name },
                             border = BorderStroke(1.dp, Color.LightGray),
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Gray)
                         ) {
@@ -133,21 +138,37 @@ fun TransactionScreen(controller: NavHostController) {
                 }
             }
         }
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(20.dp), modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(20.dp),
+            modifier = Modifier.fillMaxSize()
+        ) {
             item {
                 Spacer(Modifier.height(108.dp))
             }
             items(filteredTransaction) { item ->
-                Column(Modifier.padding(horizontal = 32.dp).clip(RoundedCornerShape(20.dp))) {
-                    Column(Modifier.fillMaxWidth().background(Color(0xfffafafa)).padding(12.dp)) {
-                        Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    Modifier
+                        .padding(horizontal = 32.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                ) {
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .background(Color(0xfffafafa))
+                            .padding(12.dp)
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
                             Text(
                                 item.updatedAt.format(
                                     DateTimeFormatter.ofPattern("MMM dd, yyyy")
                                 ),
                                 color = Color.Gray
                             )
-                            if(!statuses.containsKey(item.status)) return@Row
+                            if (!statuses.containsKey(item.status)) return@Row
                             val data = statuses[item.status]!!
                             Row(
                                 modifier = Modifier
@@ -157,7 +178,12 @@ fun TransactionScreen(controller: NavHostController) {
                                     .padding(8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(painterResource(data.rId), contentDescription = item.status, modifier = Modifier.size(16.dp), tint = data.fgColor)
+                                Icon(
+                                    painterResource(data.rId),
+                                    contentDescription = item.status,
+                                    modifier = Modifier.size(16.dp),
+                                    tint = data.fgColor
+                                )
                                 Spacer(Modifier.width(6.dp))
                                 Text(
                                     text = item.status.uppercase(),
@@ -168,38 +194,71 @@ fun TransactionScreen(controller: NavHostController) {
                         }
                         Text("ORD-${item.id}", fontWeight = FontWeight.Medium)
                     }
-                    Column(Modifier.fillMaxWidth().background(Color.White).padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .background(Color.White)
+                            .padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
                         item.items.forEach { transacItem ->
-                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
                                 NetworkImage(
                                     url = transacItem.imageUrl,
                                     contentDescription = transacItem.productName,
-                                    modifier = Modifier.size(100.dp).clip(RoundedCornerShape(16.dp))
+                                    modifier = Modifier
+                                        .size(100.dp)
+                                        .clip(RoundedCornerShape(16.dp))
                                 )
                                 Column(Modifier.weight(1f)) {
                                     Text(transacItem.productName, fontWeight = FontWeight.Medium)
-                                    Text("Qty: ${transacItem.quantity}", fontWeight = FontWeight.Light, color = Color.Gray)
+                                    Text(
+                                        "Qty: ${transacItem.quantity}",
+                                        fontWeight = FontWeight.Light,
+                                        color = Color.Gray
+                                    )
                                 }
                                 Text("Rp${transacItem.price}", modifier = Modifier.weight(1f))
                             }
                         }
                     }
-                    Column(Modifier.fillMaxWidth().background(Color.White).padding(12.dp)) {
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .background(Color.White)
+                            .padding(12.dp)
+                    ) {
                         HorizontalDivider()
                         Spacer(Modifier.height(12.dp))
-                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
                             Text("Total Amount")
                             Text("Rp${item.total}")
                         }
                     }
-                    Box(Modifier.fillMaxWidth().background(Color(0xfffafafa)).padding(horizontal = 12.dp, vertical = 6.dp)) {
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .background(Color(0xfffafafa))
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
                         TextButton(
                             onClick = {},
                             contentPadding = PaddingValues(0.dp),
                             modifier = Modifier.align(Alignment.BottomEnd)
                         ) {
                             Text("View Details")
-                            Icon(painterResource(R.drawable.top_arr_right), contentDescription = "Arrow Right")
+                            Icon(
+                                painterResource(R.drawable.top_arr_right),
+                                contentDescription = "Arrow Right"
+                            )
                         }
                     }
                 }

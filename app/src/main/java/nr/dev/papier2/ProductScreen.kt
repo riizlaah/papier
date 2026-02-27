@@ -27,8 +27,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -53,7 +51,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
@@ -90,10 +87,10 @@ fun ProductsScreen(
 
     LaunchedEffect(selectedCategory) {
         loading = true
-        if (selectedCategory == "0") {
-            products = HttpClient.getProducts(search)
+        products = if (selectedCategory == "0") {
+            HttpClient.getProducts(search)
         } else {
-            products = HttpClient.getProducts(search, selectedCategory)
+            HttpClient.getProducts(search, selectedCategory)
         }
         loading = false
     }
@@ -423,12 +420,16 @@ fun ProductDetailScreen(id: String, controller: NavHostController) {
                 )
             }
             item {
-                Column(Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp)
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp)
                 ) {
                     Text("Select Variant")
-                    LazyRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    LazyRow(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
                         items(product?.variants ?: emptyList()) { variant ->
                             if (selectedVariant!!.id == variant.id) {
                                 Button(
@@ -467,9 +468,12 @@ fun ProductDetailScreen(id: String, controller: NavHostController) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("Quantity", fontSize = MaterialTheme.typography.headlineMedium.fontSize)
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         IconButton(
-                            onClick = {quantity = max(1, quantity - 1) },
+                            onClick = { quantity = max(1, quantity - 1) },
                             modifier = Modifier
                                 .clip(CircleShape)
                                 .padding(4.dp),
@@ -489,7 +493,7 @@ fun ProductDetailScreen(id: String, controller: NavHostController) {
                             fontSize = MaterialTheme.typography.headlineMedium.fontSize
                         )
                         IconButton(
-                            onClick = {quantity += 1},
+                            onClick = { quantity += 1 },
                             modifier = Modifier
                                 .clip(CircleShape)
                                 .padding(4.dp),
@@ -523,8 +527,16 @@ fun ProductDetailScreen(id: String, controller: NavHostController) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column {
-                Text("TOTAL PRICE", color = Color.Gray, fontSize = MaterialTheme.typography.titleSmall.fontSize)
-                Text("Rp${selectedVariant!!.price.toDouble() * quantity}", color = MaterialTheme.colorScheme.primary, fontSize = MaterialTheme.typography.headlineMedium.fontSize)
+                Text(
+                    "TOTAL PRICE",
+                    color = Color.Gray,
+                    fontSize = MaterialTheme.typography.titleSmall.fontSize
+                )
+                Text(
+                    "Rp${selectedVariant!!.price.toDouble() * quantity}",
+                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = MaterialTheme.typography.headlineMedium.fontSize
+                )
             }
             Button(
                 onClick = {
@@ -537,7 +549,7 @@ fun ProductDetailScreen(id: String, controller: NavHostController) {
                 },
                 contentPadding = PaddingValues(vertical = 12.dp, horizontal = 24.dp)
             ) {
-                if(loading2) {
+                if (loading2) {
                     Text("Wait...", fontWeight = FontWeight.Medium)
                 } else {
                     Icon(

@@ -60,7 +60,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
@@ -162,7 +161,7 @@ fun BaseHome(modifier: Modifier, controller: NavHostController) {
                         },
                         modifier = Modifier.padding(vertical = 12.dp)
                     ) {
-                        if(idx == 3 && HttpClient.itemInCarts.isNotEmpty()) {
+                        if (idx == 3 && HttpClient.itemInCarts.isNotEmpty()) {
                             CartIcon(navHost)
                             return@Tab
                         }
@@ -430,19 +429,37 @@ fun ProfileScreen(rootController: NavHostController, appController: NavHostContr
                 Text("My Profile")
             }
         }
-        LazyColumn(Modifier.fillMaxSize().padding(32.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+        LazyColumn(
+            Modifier
+                .fillMaxSize()
+                .padding(32.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
             item {
-                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(
+                    Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Spacer(Modifier.height(92.dp))
                     Box {
-                        Box(Modifier.size(162.dp).clip(CircleShape).background(Color.White).align(Alignment.Center)) {
-                            Box(Modifier
+                        Box(
+                            Modifier
+                                .size(162.dp)
+                                .clip(CircleShape)
+                                .background(Color.White)
                                 .align(Alignment.Center)
-                                .padding(32.dp)
+                        ) {
+                            Box(
+                                Modifier
+                                    .align(Alignment.Center)
+                                    .padding(32.dp)
                             ) {
                                 val initial = user!!.name.split(" ")
                                     .joinToString { it.first().uppercase() }
-                                Text(initial, fontSize = MaterialTheme.typography.displayLarge.fontSize)
+                                Text(
+                                    initial,
+                                    fontSize = MaterialTheme.typography.displayLarge.fontSize
+                                )
                             }
                         }
                         // NetworkImage(...)
@@ -459,7 +476,11 @@ fun ProfileScreen(rootController: NavHostController, appController: NavHostContr
                         )
                     }
                     Spacer(Modifier.height(8.dp))
-                    Text(HttpClient.user!!.name, color = MaterialTheme.colorScheme.primary, fontSize = MaterialTheme.typography.displaySmall.fontSize)
+                    Text(
+                        HttpClient.user!!.name,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = MaterialTheme.typography.displaySmall.fontSize
+                    )
 //                    Text(HttpClient.user!!.email, color = Color.Gray)
                 }
             }
@@ -571,7 +592,13 @@ fun ActionRow(
     onClick: () -> Unit = {},
     endIcon: ImageVector = ImageVector.vectorResource(R.drawable.top_arr_right),
 ) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 16.dp).clickable(onClick = onClick), verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(vertical = 16.dp)
+            .clickable(onClick = onClick),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         Icon(
             startIcon,
             tint = Color.Gray,

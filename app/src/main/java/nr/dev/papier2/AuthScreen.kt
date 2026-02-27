@@ -46,13 +46,17 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import kotlinx.coroutines.launch
 
 
 @Composable
-fun IconTextField(value: String, onValueChange: (String) -> Unit, icon: ImageVector, modifier: Modifier = Modifier.fillMaxWidth()) {
+fun IconTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    icon: ImageVector,
+    modifier: Modifier = Modifier.fillMaxWidth()
+) {
     BasicTextField(
         value = value,
         onValueChange = onValueChange,
@@ -67,9 +71,11 @@ fun IconTextField(value: String, onValueChange: (String) -> Unit, icon: ImageVec
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(icon, contentDescription = "Icon", tint = Color.LightGray)
-                Box(Modifier
-                    .weight(1f)
-                    .padding(start = 6.dp)) {
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .padding(start = 6.dp)
+                ) {
                     innerTextF()
                 }
             }
@@ -97,9 +103,10 @@ fun PasswordField(state: TextFieldState, showPassword: Boolean, onTogglePassword
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(Icons.Default.Lock, contentDescription = "Lock", tint = Color.LightGray)
-                Box(Modifier
-                    .weight(1f)
-                    .padding(start = 6.dp)
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .padding(start = 6.dp)
                 ) {
                     innerTextF()
                 }
@@ -134,27 +141,32 @@ fun LoginScreen(modifier: Modifier, controller: NavHostController) {
             contentDescription = "Logo"
         )
         Spacer(Modifier.height(18.dp))
-        if(errorMsg.isNotEmpty()) Text(errorMsg, color = Color.Red, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
-        IconTextField(email, {email = it}, Icons.Default.MailOutline)
+        if (errorMsg.isNotEmpty()) Text(
+            errorMsg,
+            color = Color.Red,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
+        IconTextField(email, { email = it }, Icons.Default.MailOutline)
         Column(horizontalAlignment = Alignment.End) {
-            PasswordField(passwordState, showPassword, {showPassword = !showPassword})
+            PasswordField(passwordState, showPassword, { showPassword = !showPassword })
             TextButton(onClick = {}) {
                 Text("Forgot Password?")
             }
         }
         TextButton(
             onClick = {
-                if(email.isBlank()) {
+                if (email.isBlank()) {
                     errorMsg = "Email can't be empty!"
                     return@TextButton
                 }
-                if(passwordState.text.isBlank()) {
+                if (passwordState.text.isBlank()) {
                     errorMsg = "Password can't be empty!"
                     return@TextButton
                 }
                 scope.launch {
                     loading = true
-                    when(val stat = HttpClient.login(email, passwordState.text.toString())) {
+                    when (val stat = HttpClient.login(email, passwordState.text.toString())) {
                         "ok" -> {
                             controller.navigate(Route.BASE_HOME) {
                                 popUpTo(controller.graph.id) {
@@ -162,10 +174,12 @@ fun LoginScreen(modifier: Modifier, controller: NavHostController) {
                                 }
                             }
                         }
+
                         "not ok" -> {
                             errorMsg = "Login Failed"
                             loading = false
                         }
+
                         else -> {
                             errorMsg = stat
                             loading = false
@@ -186,8 +200,12 @@ fun LoginScreen(modifier: Modifier, controller: NavHostController) {
                 )
                 .padding(horizontal = 6.dp)
         ) {
-            if(loading) {
-                CircularProgressIndicator(strokeWidth = 1.dp, color = Color.White, modifier = Modifier.size(24.dp))
+            if (loading) {
+                CircularProgressIndicator(
+                    strokeWidth = 1.dp,
+                    color = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
             } else {
                 Text("Sign In", fontSize = 4.em, color = Color.White)
                 Spacer(Modifier.width(10.dp))
@@ -240,7 +258,7 @@ fun LoginScreen(modifier: Modifier, controller: NavHostController) {
             horizontalArrangement = Arrangement.Center
         ) {
             Text("Don't have an account?")
-            TextButton(onClick = {controller.navigate(Route.SIGNUP)}) {
+            TextButton(onClick = { controller.navigate(Route.SIGNUP) }) {
                 Text("Create Account", fontSize = 4.em)
             }
         }
@@ -263,37 +281,42 @@ fun SignUpScreen(modifier: Modifier, controller: NavHostController) {
             contentDescription = "Logo"
         )
         Spacer(Modifier.height(18.dp))
-        if(errorMsg.isNotEmpty()) Text(errorMsg, color = Color.Red, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
-        IconTextField(email, {email = it}, Icons.Default.MailOutline)
-        IconTextField(name, {name = it}, Icons.Default.Person)
+        if (errorMsg.isNotEmpty()) Text(
+            errorMsg,
+            color = Color.Red,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
+        IconTextField(email, { email = it }, Icons.Default.MailOutline)
+        IconTextField(name, { name = it }, Icons.Default.Person)
         Column(horizontalAlignment = Alignment.End) {
-            PasswordField(passwordState, showPassword, {showPassword = !showPassword})
+            PasswordField(passwordState, showPassword, { showPassword = !showPassword })
             TextButton(onClick = {}) {
                 Text("Forgot Password?")
             }
         }
         TextButton(
             onClick = {
-                if(name.isBlank()) {
+                if (name.isBlank()) {
                     errorMsg = "Name can't be empty"
                     return@TextButton
                 }
-                if(!email.contains('@')) {
+                if (!email.contains('@')) {
                     errorMsg = "Email not valid"
                     return@TextButton
                 }
-                if(passwordState.text.isBlank()) {
+                if (passwordState.text.isBlank()) {
                     errorMsg = "Password can't be empty"
                     return@TextButton
                 }
-                if(passwordState.text.length < 6) {
+                if (passwordState.text.length < 6) {
                     errorMsg = "Password must be longer than 6 characters"
                     return@TextButton
                 }
                 scope.launch {
                     loading = true
                     val res = HttpClient.register(name, email, passwordState.text.toString())
-                    if(res.code in 200..299) {
+                    if (res.code in 200..299) {
                         errorMsg = ""
                         loading = false
                         controller.navigate(Route.LOGIN)
@@ -316,8 +339,12 @@ fun SignUpScreen(modifier: Modifier, controller: NavHostController) {
                 )
                 .padding(horizontal = 6.dp)
         ) {
-            if(loading) {
-                CircularProgressIndicator(strokeWidth = 1.dp, color = Color.White, modifier = Modifier.size(24.dp))
+            if (loading) {
+                CircularProgressIndicator(
+                    strokeWidth = 1.dp,
+                    color = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
             } else {
                 Text("Create Account", fontSize = 4.em, color = Color.White)
                 Spacer(Modifier.width(10.dp))
@@ -370,7 +397,7 @@ fun SignUpScreen(modifier: Modifier, controller: NavHostController) {
             horizontalArrangement = Arrangement.Center
         ) {
             Text("Already have an account?")
-            TextButton(onClick = {controller.navigate(Route.LOGIN)}) {
+            TextButton(onClick = { controller.navigate(Route.LOGIN) }) {
                 Text("Sign In", fontSize = 4.em)
             }
         }

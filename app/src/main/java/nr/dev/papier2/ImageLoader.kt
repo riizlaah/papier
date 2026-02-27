@@ -34,15 +34,17 @@ class ImageLoader {
     suspend fun loadImage(url: String): ImageBitmap? {
         cache[url]?.let { return it }
         val imgBitmap = HttpClient.loadPng(url)
-        if(imgBitmap != null) cache[url] = imgBitmap
+        if (imgBitmap != null) cache[url] = imgBitmap
         return imgBitmap
     }
+
     fun hasCache(url: String): Boolean {
         return cache.containsKey(url)
     }
-    fun clearCache() {
-        cache.clear()
-    }
+
+//    fun clearCache() {
+//        cache.clear()
+//    }
 }
 
 @Composable
@@ -57,16 +59,17 @@ fun NetworkImage(
     var isError by remember { mutableStateOf(false) }
 
     val imgLoader = rememberImageLoader()
-    val scope = rememberCoroutineScope()
+    rememberCoroutineScope()
 
     LaunchedEffect(url) {
-        if(url.isNotBlank()) {
-            if(!imgLoader.hasCache(url)) isLoading = true
+        if (url.isNotBlank()) {
+            if (!imgLoader.hasCache(url)) isLoading = true
             isError = false
             try {
                 imgBitmap = imgLoader.loadImage(url)
                 isError = imgBitmap == null
             } catch (e: Exception) {
+                e.printStackTrace()
                 isError = true
             } finally {
                 isLoading = false
@@ -87,11 +90,15 @@ fun NetworkImage(
                     ),
                     label = "color1"
                 )
-                Box(Modifier.fillMaxSize().background(color))
+                Box(Modifier
+                    .fillMaxSize()
+                    .background(color))
             }
+
             isError -> {
                 Text("Failed to load image.")
             }
+
             imgBitmap != null -> {
                 Image(
                     imgBitmap!!,

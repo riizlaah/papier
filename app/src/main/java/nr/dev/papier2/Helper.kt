@@ -1,12 +1,7 @@
 package nr.dev.papier2
 
 import android.graphics.BitmapFactory
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import kotlinx.coroutines.Dispatchers
@@ -17,7 +12,6 @@ import java.net.URL
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.OffsetDateTime
-import kotlin.time.Instant
 
 object Route {
     // auth
@@ -185,7 +179,7 @@ object HttpClient {
             try {
                 val res = send(HttpRequest(url), true)
                 if (res.code == 200 && res.bytes != null) {
-                    val bitmap = BitmapFactory.decodeByteArray(res.bytes, 0, res.bytes!!.size)
+                    val bitmap = BitmapFactory.decodeByteArray(res.bytes, 0, res.bytes.size)
                     bitmap.asImageBitmap()
                 } else {
                     println("img loading errCode: ${res.code}")
@@ -399,48 +393,54 @@ object HttpClient {
     }
 
     suspend fun addVariantToCart(variantId: String, quantity: Int): Boolean {
-        if(accessToken.isEmpty()) return false
-        if(itemInCarts.any { it.variant.id == variantId }) {
+        if (accessToken.isEmpty()) return false
+        if (itemInCarts.any { it.variant.id == variantId }) {
             val item = itemInCarts.find { it.variant.id == variantId }
             val body = """{"quantity": ${quantity + item!!.quantity}}"""
             val res = withContext(Dispatchers.IO) {
-                send(HttpRequest(
-                    url = address + "cart/$variantId",
-                    method = "PATCH",
-                    body = body,
-                    headers = mapOf("authorization" to "Bearer $accessToken")
-                ))
+                send(
+                    HttpRequest(
+                        url = address + "cart/$variantId",
+                        method = "PATCH",
+                        body = body,
+                        headers = mapOf("authorization" to "Bearer $accessToken")
+                    )
+                )
             }
-            if(res.body.isNullOrEmpty()) return false
+            if (res.body.isNullOrEmpty()) return false
             return res.code == 200
         } else {
             val body = """{"variantId": "$variantId", "quantity": $quantity}"""
             val res = withContext(Dispatchers.IO) {
-                send(HttpRequest(
-                    url = address + "cart",
-                    method = "POST",
-                    body = body,
-                    headers = mapOf("authorization" to "Bearer $accessToken")
-                ))
+                send(
+                    HttpRequest(
+                        url = address + "cart",
+                        method = "POST",
+                        body = body,
+                        headers = mapOf("authorization" to "Bearer $accessToken")
+                    )
+                )
             }
             return res.code == 200
         }
     }
 
     suspend fun updateItemInCarts(): Boolean {
-        if(accessToken.isEmpty()) return false
+        if (accessToken.isEmpty()) return false
         val res = withContext(Dispatchers.IO) {
-            send(HttpRequest(
-                url = address + "cart",
-                headers = mapOf("authorization" to "Bearer $accessToken")
-            ))
+            send(
+                HttpRequest(
+                    url = address + "cart",
+                    headers = mapOf("authorization" to "Bearer $accessToken")
+                )
+            )
         }
-        if(res.body.isNullOrEmpty()) return false
-        if(res.code == 200) {
+        if (res.body.isNullOrEmpty()) return false
+        if (res.code == 200) {
             val json = JSONObject(res.body)
             val arr = json.getJSONArray("data")
             val items = mutableListOf<Cart>()
-            for(i in 0 until arr.length()) {
+            for (i in 0 until arr.length()) {
                 val obj = arr.getJSONObject(i)
                 val variantJSON = obj.getJSONObject("variant")
                 val productJSON = variantJSON.getJSONObject("product")
@@ -458,12 +458,14 @@ object HttpClient {
                     price = variantJSON.getString("price"),
                     stock = variantJSON.getInt("stock"),
                 )
-                items.add(Cart(
-                    id = obj.getString("id"),
-                    quantity = obj.getInt("quantity"),
-                    product = product,
-                    variant = variant
-                ))
+                items.add(
+                    Cart(
+                        id = obj.getString("id"),
+                        quantity = obj.getInt("quantity"),
+                        product = product,
+                        variant = variant
+                    )
+                )
             }
             itemInCarts.clear()
             itemInCarts.addAll(items)
@@ -475,33 +477,37 @@ object HttpClient {
     }
 
     suspend fun deleteVariantFromCart(id: String) {
-        if(accessToken.isEmpty()) return
+        if (accessToken.isEmpty()) return
         withContext(Dispatchers.IO) {
-            send(HttpRequest(
-                url = address + "cart/$id",
-                method = "DELETE",
-                headers = mapOf("authorization" to "Bearer $accessToken")
-            ))
+            send(
+                HttpRequest(
+                    url = address + "cart/$id",
+                    method = "DELETE",
+                    headers = mapOf("authorization" to "Bearer $accessToken")
+                )
+            )
         }
     }
 
     suspend fun updateCartItemQuantity(id: String, quantity: Int): Boolean {
-        if(accessToken.isEmpty()) return false
+        if (accessToken.isEmpty()) return false
         val body = """{"quantity": $quantity}"""
         val res = withContext(Dispatchers.IO) {
-            send(HttpRequest(
-                url = address + "cart/$id",
-                method = "PATCH",
-                body = body,
-                headers = mapOf("authorization" to "Bearer $accessToken")
-            ))
+            send(
+                HttpRequest(
+                    url = address + "cart/$id",
+                    method = "PATCH",
+                    body = body,
+                    headers = mapOf("authorization" to "Bearer $accessToken")
+                )
+            )
         }
-        if(res.body.isNullOrEmpty()) return false
+        if (res.body.isNullOrEmpty()) return false
         return res.code == 200
     }
 
     suspend fun validateCoupon(coupon: String): Boolean {
-        if(accessToken.isEmpty()) return false
+        if (accessToken.isEmpty()) return false
         val body = """{"code": "$coupon"}"""
         val res = withContext(Dispatchers.IO) {
             send(
@@ -517,7 +523,7 @@ object HttpClient {
     }
 
     suspend fun checkout(coupon: String): Boolean {
-        if(accessToken.isEmpty()) return false
+        if (accessToken.isEmpty()) return false
         val body = """{"couponCode": "$coupon"}"""
         val res = withContext(Dispatchers.IO) {
             send(
@@ -533,50 +539,59 @@ object HttpClient {
     }
 
     suspend fun getTransactions(): List<Transaction> {
-        if(accessToken.isEmpty()) return emptyList()
+        if (accessToken.isEmpty()) return emptyList()
         val res = withContext(Dispatchers.IO) {
-            send(HttpRequest(
-                url = address + "transactions",
-                headers = mapOf("authorization" to "Bearer $accessToken")
-            ))
+            send(
+                HttpRequest(
+                    url = address + "transactions",
+                    headers = mapOf("authorization" to "Bearer $accessToken")
+                )
+            )
         }
-        if(res.code != 200 || res.body.isNullOrEmpty()) return emptyList()
+        if (res.code != 200 || res.body.isNullOrEmpty()) return emptyList()
         val json = JSONObject(res.body)
         val arr = json.getJSONArray("data")
         val transactions = mutableListOf<Transaction>()
-        for(i in 0 until arr.length()) {
+        for (i in 0 until arr.length()) {
             val obj = arr.getJSONObject(i)
             val itemsJSON = obj.getJSONArray("items")
             val items = mutableListOf<TransactionItem>()
-            for(j in 0 until itemsJSON.length()) {
+            for (j in 0 until itemsJSON.length()) {
                 val item = itemsJSON.getJSONObject(j)
-                val imageUrl = if(item.getString("productImage").isNullOrEmpty() || item.getString("productImage") == "null") {
+                val imageUrl = if (item.getString("productImage").isNullOrEmpty() || item.getString(
+                        "productImage"
+                    ) == "null"
+                ) {
                     "https://placehold.co/400x400/png?text=EMPTY"
                 } else {
                     item.getString("productImage").replace("?", "/png?")
                 }
-                items.add(TransactionItem(
-                    id = item.getString("id"),
-                    transactionId = item.getString("transactionId"),
-                    variantId = item.getString("variantId"),
-                    productName = item.getString("productName"),
-                    variantName = item.getString("variantName"),
-                    price = item.getString("price"),
-                    quantity = item.getInt("quantity"),
-                    imageUrl = imageUrl
-                ))
+                items.add(
+                    TransactionItem(
+                        id = item.getString("id"),
+                        transactionId = item.getString("transactionId"),
+                        variantId = item.getString("variantId"),
+                        productName = item.getString("productName"),
+                        variantName = item.getString("variantName"),
+                        price = item.getString("price"),
+                        quantity = item.getInt("quantity"),
+                        imageUrl = imageUrl
+                    )
+                )
             }
-            transactions.add(Transaction(
-                id = obj.getString("id"),
-                subtotal = obj.getString("subtotal"),
-                total = obj.getString("total"),
-                discount = obj.getString("discount"),
-                status = obj.getString("status"),
-                paidAt = OffsetDateTime.parse(obj.getString("paidAt")),
-                createdAt = OffsetDateTime.parse(obj.getString("createdAt")),
-                updatedAt = OffsetDateTime.parse(obj.getString("updatedAt")),
-                items = items
-            ))
+            transactions.add(
+                Transaction(
+                    id = obj.getString("id"),
+                    subtotal = obj.getString("subtotal"),
+                    total = obj.getString("total"),
+                    discount = obj.getString("discount"),
+                    status = obj.getString("status"),
+                    paidAt = OffsetDateTime.parse(obj.getString("paidAt")),
+                    createdAt = OffsetDateTime.parse(obj.getString("createdAt")),
+                    updatedAt = OffsetDateTime.parse(obj.getString("updatedAt")),
+                    items = items
+                )
+            )
         }
         return transactions
     }
