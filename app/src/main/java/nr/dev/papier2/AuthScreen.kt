@@ -207,7 +207,7 @@ fun LoginScreen(modifier: Modifier, controller: NavHostController) {
                     modifier = Modifier.size(24.dp)
                 )
             } else {
-                Text("Sign In", fontSize = 4.em, color = Color.White)
+                Text("Sign In", fontSize = MaterialTheme.typography.bodyLarge.fontSize, color = Color.White)
                 Spacer(Modifier.width(10.dp))
                 Icon(
                     painterResource(R.drawable.arr_forward),
@@ -216,7 +216,7 @@ fun LoginScreen(modifier: Modifier, controller: NavHostController) {
                 )
             }
         }
-        Spacer(Modifier.height(18.dp))
+        Spacer(Modifier.height(8.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             HorizontalDivider(Modifier.weight(1f))
             Text(
@@ -227,7 +227,7 @@ fun LoginScreen(modifier: Modifier, controller: NavHostController) {
             )
             HorizontalDivider(Modifier.weight(1f))
         }
-        Spacer(Modifier.height(18.dp))
+        Spacer(Modifier.height(8.dp))
         Row(Modifier.fillMaxWidth()) {
             val mod = Modifier
                 .weight(1f)
@@ -251,7 +251,7 @@ fun LoginScreen(modifier: Modifier, controller: NavHostController) {
                 )
             }
         }
-        Spacer(Modifier.height(18.dp))
+        Spacer(Modifier.height(8.dp))
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -259,7 +259,7 @@ fun LoginScreen(modifier: Modifier, controller: NavHostController) {
         ) {
             Text("Don't have an account?")
             TextButton(onClick = { controller.navigate(Route.SIGNUP) }) {
-                Text("Create Account", fontSize = 4.em)
+                Text("Create Account", fontSize = MaterialTheme.typography.bodyLarge.fontSize)
             }
         }
     }
@@ -289,12 +289,8 @@ fun SignUpScreen(modifier: Modifier, controller: NavHostController) {
         )
         IconTextField(email, { email = it }, Icons.Default.MailOutline)
         IconTextField(name, { name = it }, Icons.Default.Person)
-        Column(horizontalAlignment = Alignment.End) {
-            PasswordField(passwordState, showPassword, { showPassword = !showPassword })
-            TextButton(onClick = {}) {
-                Text("Forgot Password?")
-            }
-        }
+        PasswordField(passwordState, showPassword, { showPassword = !showPassword })
+        Spacer(Modifier.height(8.dp))
         TextButton(
             onClick = {
                 if (name.isBlank()) {
@@ -346,7 +342,7 @@ fun SignUpScreen(modifier: Modifier, controller: NavHostController) {
                     modifier = Modifier.size(24.dp)
                 )
             } else {
-                Text("Create Account", fontSize = 4.em, color = Color.White)
+                Text("Create Account", fontSize = MaterialTheme.typography.bodyLarge.fontSize, color = Color.White)
                 Spacer(Modifier.width(10.dp))
                 Icon(
                     painterResource(R.drawable.arr_forward),
@@ -355,7 +351,7 @@ fun SignUpScreen(modifier: Modifier, controller: NavHostController) {
                 )
             }
         }
-        Spacer(Modifier.height(18.dp))
+        Spacer(Modifier.height(8.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             HorizontalDivider(Modifier.weight(1f))
             Text(
@@ -366,7 +362,7 @@ fun SignUpScreen(modifier: Modifier, controller: NavHostController) {
             )
             HorizontalDivider(Modifier.weight(1f))
         }
-        Spacer(Modifier.height(18.dp))
+        Spacer(Modifier.height(8.dp))
         Row(Modifier.fillMaxWidth()) {
             val mod = Modifier
                 .weight(1f)
@@ -390,7 +386,7 @@ fun SignUpScreen(modifier: Modifier, controller: NavHostController) {
                 )
             }
         }
-        Spacer(Modifier.height(18.dp))
+        Spacer(Modifier.height(8.dp))
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -398,7 +394,7 @@ fun SignUpScreen(modifier: Modifier, controller: NavHostController) {
         ) {
             Text("Already have an account?")
             TextButton(onClick = { controller.navigate(Route.LOGIN) }) {
-                Text("Sign In", fontSize = 4.em)
+                Text("Sign In", fontSize = MaterialTheme.typography.bodyLarge.fontSize)
             }
         }
     }
