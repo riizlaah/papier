@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -43,6 +44,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavHostController
@@ -80,25 +82,45 @@ fun CartScreen(controller: NavHostController) {
                             controller.popBackStack()
                         })
                 )
+                Spacer(Modifier.width(12.dp))
                 Text("Your Cart", fontWeight = FontWeight.Medium)
             }
             Text(
                 text = "${HttpClient.itemInCarts.size} Items",
                 modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
+                    .clip(RoundedCornerShape(50))
                     .background(Color(0xffffedd4))
-                    .padding(8.dp),
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
                 fontWeight = FontWeight.Medium,
                 fontSize = MaterialTheme.typography.bodySmall.fontSize,
                 color = MaterialTheme.colorScheme.primary
             )
         }
+        if(HttpClient.itemInCarts.isEmpty()) {
+            Column(
+                Modifier.align(Alignment.Center).fillMaxWidth().padding(40.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(Modifier.clip(CircleShape).background(Color(0xfffff7ed)).padding(20.dp)) {
+                    Icon(painterResource(R.drawable.cart), tint = Color(0xffffd7a8), contentDescription = "Cart", modifier = Modifier.requiredSize(72.dp))
+                }
+                Text("Your cart is empty", fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.primary, fontSize = MaterialTheme.typography.displaySmall.fontSize)
+                Text("Looks like you haven't added any stationery to your collection yet.")
+                Button(
+                    onClick = {
+                        controller.navigate(Route.HOME)
+                    },
+                    contentPadding = PaddingValues(24.dp)
+                ) {
+                    Text("Start Shopping")
+                }
+            }
+            return@Box
+        }
         LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.fillMaxSize().padding(24.dp)) {
             item {
                 Spacer(Modifier.height(64.dp))
-                if(HttpClient.itemInCarts.size == 0) {
-                    Text("Empty")
-                }
             }
             items(HttpClient.itemInCarts) { cart ->
                 Row(
@@ -150,13 +172,13 @@ fun CartScreen(controller: NavHostController) {
                                     tint = Color.Gray,
                                     contentDescription = "Decrease",
                                     modifier = Modifier.clickable(onClick = {
-                                        HttpClient.itemInCarts[idx].quantity = max(1, HttpClient.itemInCarts[idx].quantity - 1)
+                                        HttpClient.itemInCarts[idx] = cart.copy(quantity = max(1, cart.quantity - 1))
                                         scope.launch {
                                             HttpClient.updateCartItemQuantity(cart.id, HttpClient.itemInCarts[idx].quantity)
                                         }
                                     })
                                 )
-                                Text("${HttpClient.itemInCarts[idx].quantity}")
+                                Text("${cart.quantity}")
                                 Icon(
                                     Icons.Default.Add,
                                     tint = Color.Gray,
@@ -164,7 +186,7 @@ fun CartScreen(controller: NavHostController) {
                                     modifier = Modifier
                                         .requiredSize(24.dp)
                                         .clickable(onClick = {
-                                            HttpClient.itemInCarts[idx].quantity += 1
+                                            HttpClient.itemInCarts[idx] = cart.copy(quantity = cart.quantity + 1)
                                             scope.launch {
                                                 HttpClient.updateCartItemQuantity(cart.id, HttpClient.itemInCarts[idx].quantity)
                                             }
@@ -178,13 +200,14 @@ fun CartScreen(controller: NavHostController) {
             item {
                 Column {
                     Text("Promo Code")
-                    Row(Modifier.fillMaxWidth()) {
+                    Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                         IconTextField(
                             icon = ImageVector.vectorResource(R.drawable.tag),
                             value = promoCode,
                             onValueChange = {promoCode = it},
                             modifier = Modifier.weight(1f)
                         )
+                        Spacer(Modifier.width(16.dp))
                         Button(
                             onClick = {},
                             colors = ButtonDefaults.buttonColors(
@@ -219,12 +242,14 @@ fun CartScreen(controller: NavHostController) {
                     }
                     if(total < freeShippingThreshold) {
                         Text(
-                            text = "Add Rp${freeShippingThreshold - total}",
+                            text = "Add Rp${freeShippingThreshold - total} or more for free shipping.",
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(Color(0xfffff7ed))
-                                .padding(12.dp)
+                                .padding(12.dp),
+                            color = Color(0xfff54a00),
+                            textAlign = TextAlign.Center
                         )
                     }
                     Spacer(Modifier.height(128.dp))
@@ -236,7 +261,7 @@ fun CartScreen(controller: NavHostController) {
                 .align(Alignment.BottomStart)
                 .fillMaxWidth()
                 .background(Color.White)
-                .padding(24.dp)
+                .padding(24.dp),
         ) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 var total = HttpClient.itemInCarts.sumOf { it.variant.price.toDouble() * it.quantity }
@@ -246,10 +271,11 @@ fun CartScreen(controller: NavHostController) {
                 Text("Total", color = Color.Gray)
                 Text("Rp${total}", color = MaterialTheme.colorScheme.primary)
             }
+            Spacer(Modifier.height(16.dp))
             Button(
                 onClick = {},
                 modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(12.dp)
+                contentPadding = PaddingValues(16.dp)
             ) {
                 Text("Checkout")
                 Spacer(Modifier.width(12.dp))

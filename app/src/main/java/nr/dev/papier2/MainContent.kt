@@ -240,7 +240,7 @@ fun HomeScreen(controller: NavHostController) {
                     )
                 )
                 Spacer(Modifier.width(8.dp))
-                if(HttpClient.itemInCarts.size > 0) {
+                if(HttpClient.itemInCarts.isNotEmpty()) {
                     BadgedBox(
                         modifier = Modifier.clickable(onClick = {
                             controller.navigate(Route.CART)
