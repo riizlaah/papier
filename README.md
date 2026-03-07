@@ -11,4 +11,9 @@ Mobile online shop application (no third party included, except `navigation-comp
 - Checkout all items in `Cart` (with optional coupon code)
 - View `Transaction` history
 
+## Previews
+<div>
+  <img src="previews/preview1.png" width="350">
+  <img src="previews/preview2.png" width="350">
+</div>
 
